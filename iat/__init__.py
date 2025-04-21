@@ -1183,6 +1183,8 @@ class DictatorOffer(Page):
         set_payoffs(group)
 
 
+## cometario random.
+
 class ResultsDictador(Page):
     @staticmethod
     def is_displayed(player):
