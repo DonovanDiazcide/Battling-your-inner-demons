@@ -2,13 +2,13 @@ from os import environ
 SESSION_CONFIGS = [
     dict(
         name="iat_images",
-        display_name="IAT using images",
+        display_name="iat using images",
         num_demo_participants=4,
         app_sequence=["iat"],
         primary_images=True,
         primary=['images:Personas obesas', 'images:Personas delgadas', 'images:Personas homosexuales', "images:Personas heterosexuales"],
         secondary_images=True,
-        secondary=['images:Bueno', 'images:Malo', 'images:Bueno', 'images:Malo', 'images:positivo peso', 'images:negativo peso', 'images:positivo sexualidad', 'images:negativo sexualidad' ],
+        secondary=['images:Bueno', 'images:Malo', 'images:Bueno', 'images:Malo', 'images:bueno peso', 'images:malo peso', 'images:bueno sexualidad', 'images:malo sexualidad' ],
         num_iterations={1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
                         15: 1, 16: 1, 17: 1, 18: 1,
@@ -40,9 +40,9 @@ ADMIN_USERNAME = "admin"
 # for security, best to set admin password in an environment variable
 ADMIN_PASSWORD = environ.get("OTREE_ADMIN_PASSWORD")
 
-DEMO_PAGE_TITLE = "Welcome to IAT based experiment"
+DEMO_PAGE_TITLE = "Welcome to iat based experiment"
 DEMO_PAGE_INTRO_HTML = """
-Espera las instrucciones para saber a qué página del IAT ingresar
+Espera las instrucciones para saber a qué página del iat ingresar
 """
 
 SECRET_KEY = "2015765205890"
@@ -53,8 +53,8 @@ import sys
 
 ROOMS = [
     dict(
-        name='IAT_experiment',
-        display_name='IAT_experiment',
+        name='iat_experiment',
+        display_name='iat_experiment',
         participant_label_file='_rooms/econ101.txt',
     ),
     dict(name='live_demo', display_name='Room for live demo (no participant labels)'),

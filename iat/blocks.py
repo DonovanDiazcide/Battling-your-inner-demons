@@ -95,7 +95,7 @@ BLOCKS1 = {
     },
     # Bloques adicionales: feedback, juego y agradecimiento
     15: {
-        'title': "Ronda 15 (FeedbackIAT, resultados, juego)",
+        'title': "Ronda 15 (Feedbackiat, resultados, juego)",
         'practice': False,
         'left': {'primary': '', 'secondary': ''},
         'right': {'primary': '', 'secondary': ''}
@@ -216,7 +216,7 @@ BLOCKS2 = {
     },
     # Bloques adicionales: feedback, juego y agradecimiento (idénticos a BLOCKS1)
     15: {
-        'title': "Ronda 15 (FeedbackIAT, resultados, juego)",
+        'title': "Ronda 15 (Feedbackiat, resultados, juego)",
         'practice': False,
         'left': {'primary': '', 'secondary': ''},
         'right': {'primary': '', 'secondary': ''}
@@ -262,7 +262,7 @@ def configure(block, config):
     """Insertar nombres de categorías desde la configuración en el setup del bloque.
     block: {'left': {'primary': 1, 'secondary': 1}, 'right': {'primary': 2, 'secondary': 2}}
     config: {'primary': ['maledsadsa', 'female'], 'secondary': ['work', 'family']}
-    result: {'left': {'primary': 'male', 'secondary': 'work'}, 'right': {'primary': 'female', 'secondary': 'family'}}
+    result: {'left': {'primar   y': 'male', 'secondary': 'work'}, 'right': {'primary': 'female', 'secondary': 'family'}}
     """
     result = copy.deepcopy(block)
     for side in ['left', 'right']:

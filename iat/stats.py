@@ -3,7 +3,7 @@
 All data are list of float values
 
 Implementation of d-score according to this snapshot:
-http://faculty.washington.edu/agg/IATmaterials/Summary%20of%20Improved%20Scoring%20Algorithm.pdf
+http://faculty.washington.edu/agg/iatmaterials/Summary%20of%20Improved%20Scoring%20Algorithm.pdf
 """
 
 import math

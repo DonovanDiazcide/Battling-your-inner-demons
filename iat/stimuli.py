@@ -23,8 +23,8 @@ DICT = {
         "homo1.png",
         "homo2.png",
         "07_lesbian.jpg",
-        "15_lesbian",
-        "14_gay"
+        "15_lesbian.jpg",
+        "14_gay.jpg"
     ],
     "images:Personas heterosexuales": [
         "heterofinal.png",
@@ -60,7 +60,7 @@ DICT = {
     ],
     'bueno': ['amusement', 'fun', 'friendship', 'happyness', 'joy'],
     'malo': ['anger', 'hate', 'fear', 'panic', 'sickness'],
-    #positivo obeso
+    #bueno obeso
     'images:Bueno': [
         #aquí le puedo pedir a chatgpt que genere pngs de las midmas dimensiones al igual que la imagen de etc.
         "bueno1.png",
@@ -72,7 +72,7 @@ DICT = {
         "bueno7.png",
         "bueno8.png",
     ],
-    #negativo obseo
+    #malo obseo
     'images:Malo': [
         "malo1.png",
         "malo2.png",
@@ -83,8 +83,8 @@ DICT = {
         "malo7.png",
         "malo8.png",
     ],
-    #positivo sexualidad
-'images:positivo sexualidad': [
+    #bueno sexualidad
+'images:bueno sexualidad': [
         #aquí le puedo pedir a chatgpt que genere pngs de las midmas dimensiones al igual que la imagen de etc.
         "emoji_u263a.png",
         "emoji_u1f600.png",
@@ -92,8 +92,8 @@ DICT = {
         "emoji_u1f60a.png",
         "emoji_u1f60d.png",
     ],
-    #negativo sexualidad
-    'images:negativo sexualidad': [
+    #malo sexualidad
+    'images:malo sexualidad': [
         "emoji_u2639.png",
         "emoji_u1f612.png",
         "emoji_u1f616.png",

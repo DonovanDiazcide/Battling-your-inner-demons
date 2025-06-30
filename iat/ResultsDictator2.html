@@ -1,0 +1,44 @@
+{# ResultsDictador2.html #}
+{% block title %}
+    Resultados de las decisiones monetarias que pueden afectar a grupos de la Etapa 2
+{% endblock %}
+
+{% block content %}
+  <h3>Resumen de Asignaciones</h3>
+  <p>A continuación, tu resumen:</p>
+
+  {% for offer in dictator_offers %}
+    <h4>
+      Ronda {{ offer.round }} – Categoría:
+      {% if offer.category == "Miembro del grupo" %}
+        Algún grupo de: ({{ offer.full_category }})
+      {% else %}
+        {% if offer.round == 15 %}
+          personas delgadas
+        {% elif offer.round == 16 %}
+          personas heterosexuales
+        {% else %}
+          {{ offer.category }}
+        {% endif %}
+      {% endif %}
+    </h4>
+
+    <p><strong>Mantener para ti:</strong> {{ offer.kept }}</p>
+
+    <p><strong>Asignación a
+      {% if offer.category == "Miembro del grupo" %}
+        Algún grupo de: {{ offer.full_category }}
+      {% else %}
+        {% if offer.round == 15 %}
+          personas delgadas
+        {% elif offer.round == 16 %}
+          personas heterosexuales
+        {% else %}
+          {{ offer.category }}
+        {% endif %}
+      {% endif %}:
+    </strong> {{ offer.assigned }}</p>
+  {% endfor %}
+
+  <p>Gracias por tu participación.</p>
+{% endblock %}

@@ -20,8 +20,8 @@ Configurable parameters (in session config):
 
 0. download/unzip content of this repo into some working directory, or clone it using git 
    ```bash
-   git clone https://github.com/DonovanDiazcide/IAT_LICS
-   cd IAT_LICS
+   git clone https://github.com/DonovanDiazcide/iat_LICS
+   cd iat_LICS
    ```
 1. create and activate virtualenv in working directory
    ```bash
@@ -73,7 +73,7 @@ Configurable parameters (in session config):
    - breakpoints will work, including code of `live_method`
 
 # Customization
-## IAT
+## iat
 
 ### Creating custom stimuli
 

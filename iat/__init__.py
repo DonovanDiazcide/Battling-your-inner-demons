@@ -12,11 +12,13 @@ import math
 from statistics import mean, stdev
 from decimal import Decimal
 
-# comentarios
+# comentarios.
 doc = """
 Implicit Association Test, draft
 """
 from statistics import mean, stdev
+
+
 
 def dscore1(data3: list, data4: list, data6: list, data7: list):
     # Filtrar valores demasiado largos.
@@ -104,12 +106,16 @@ def dscore2(data10: list, data13: list, data11: list, data14: list):
 class Constants(BaseConstants):
     name_in_url = 'iat'
     players_per_group = None
-    num_rounds = 18 + 14  # 14 para IAT + 4 para dictador, +14 de los demás IAT.
+    num_rounds = 16  # 14 para iat + 4 para dictador
 
     keys = {"e": 'left', "i": 'right'}
     trial_delay = 0.250
     endowment = Decimal('100')  # Añadido para dictador
-    categories = ['Personas delgadas', 'Personas obesas', 'Personas homosexuales', 'Personas heterosexuales']  # Categorías para el Dictador
+    categories = ['personas delgadas y personas obesas', 'personas homosexuales y personas heterosexuales']  # Categorías para el Dictador
+    PersonasDelgadas = "personas delgadas"
+    PersonasObesas = "personas obesas"
+    PersonasHeterosexuales = "personas heterosexuales"
+    PersonasHomosexuales = "personas homosexuales"
 
 
 def url_for_image(filename):
@@ -134,32 +140,46 @@ def creating_session(self):
         secondary=[None, None],
         secondary_images=False,
         num_iterations={
-            # Rondas existentes para IAT.
+            # Rondas existentes para iat.
             1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
             8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
             # Rondas adicionales para Dictador.
-            15: 1, 16: 1, 17: 1, 18: 1
+            15: 1, 16: 1
         },
     )
     session.params = {}
     for param in defaults:
         session.params[param] = session.config.get(param, defaults[param])
 
-
-    # Asignar orden de rondas del IAT solo en la primera ronda
     if self.round_number == 1:
-        for player in self.get_players():
-            blocks.iat_ordering = random.choice([
-                list(range(1, 15)),  # Orden directo: 1-14
-                list(range(8, 15)) + list(range(1, 8))  # Orden invertido: 8-14,1-7
-            ])
-            player.participant.vars['iat_round_order'] = blocks.iat_ordering
-            print(blocks.iat_ordering)
+        players = list(self.get_players())
+        random.shuffle(players)
+        mitad = len(players) // 2
 
-        # Aleatorizar las categorías del Dictador para las rondas 15-18
+        orden_directo = list(range(1, 15))
+        orden_invertido = list(range(8, 15)) + list(range(1, 8))
+
+        # 50% → directos
+        for p in players[:mitad]:
+            p.participant.vars['iat_round_order'] = orden_directo
+
+        # 50% → invertidos
+        for p in players[mitad:]:
+            p.participant.vars['iat_round_order'] = orden_invertido
+
+        # --- Nuevo bloque: imprime resumen ordenado ---
+        print("[IAT ORDER SUMMARY]")
+        for p in sorted(players, key=lambda p: p.id_in_subsession):
+            order = p.participant.vars['iat_round_order']
+            # aquí decides cómo formatear el texto
+            print(f"Jugador {p.id_in_subsession}: {order}")
+
+        # tu código de categorías del Dictador sigue igual
         shuffled_categories = Constants.categories.copy()
         random.shuffle(shuffled_categories)
         session.vars['shuffled_dictator_categories'] = shuffled_categories
+        # Fijamos orden: 15→delgadas/obesas, 16→homo/hetero
+        session.vars['shuffled_dictator_categories'] = Constants.categories.copy()
 
     block = get_block_for_round(self.round_number, session.params)
 
@@ -172,7 +192,7 @@ def creating_session(self):
         #print("shuffled categories:", shuffled_categories)
 
     # Asignar categorías al Dictador basadas en la lista aleatoria para las rondas 15-18
-    if self.round_number in [15, 16, 17, 18]:
+    if self.round_number in [15, 16]:
         shuffled_categories = session.vars.get('shuffled_dictator_categories')
         if shuffled_categories:
             # Asignar una categoría por ronda 15-18 al grupo
@@ -260,8 +280,8 @@ class Player(BasePlayer):
         blank=True
     )
 
-    dscore1 = models.FloatField()  # D-score del primer IAT
-    dscore2 = models.FloatField()  # D-score del segundo IAT
+    dscore1 = models.FloatField()  # D-score del primer iat
+    dscore2 = models.FloatField()  # D-score del segundo iat
 
     # Nuevo campo para la pregunta moral
     moral_question = models.StringField(label="Aquí va una pregunta moral", blank=True)
@@ -294,113 +314,257 @@ class Player(BasePlayer):
 
     # (opcional) 6. Pregunta de relleno informal — preferencias personales
     preguntaM6 = models.LongStringField(
-        label="¿Cuál es una cualidad que más valoras en otras personas (por ejemplo: creatividad, lealtad, inteligencia, honestidad)? ¿Por qué?"
-    )
-
-    iat2_self_assessment = models.StringField(
-        label="¿Cómo crees que te fue en el IAT de personas homosexuales y personas heterosexuales?",
-        choices=[
-            "Neutral",
-            "Asociación leve a personas homosexuales+feliz, personas heterosexuales+triste",
-            "Asociación leve a personas homosexuales+triste, personas heterosexuales+feliz",
-            "Asociación moderada a personas homosexuales+feliz, personas heterosexuales+triste",
-            "Asociación moderada a personas homosexuales+triste, personas heterosexuales+feliz",
-            "Asociación fuerte a personas homosexuales+feliz, personas heterosexuales+triste",
-            "Asociación fuerte a personas homosexuales+triste, personas heterosexuales+feliz",
-        ],
-        widget=widgets.RadioSelect
+        label="¿Cuál es una cualidad que más valoras en otras Personas (por ejemplo: creatividad, lealtad, inteligencia, honestidad)? ¿Por qué?"
     )
 
     iat1_self_assessment = models.StringField(
-        label="¿Cómo crees que te fue en el IAT de personas obesas y personas delgadas?",
+        label="¿Cómo crees que te fue en el IAT de Personas obesas y Personas delgadas?",
+        choices=[
+        "Neutral",
+        "Leve: Personas delgadas+bueno, Personas obesas+malo",
+        "Moderada: Personas delgadas+bueno, Personas obesas+malo",
+        "Fuerte: Personas delgadas+bueno, Personas obesas+malo",
+        "Leve: Personas obesas+bueno, Personas delgadas+malo",
+        "Moderada: Personas obesas+bueno, Personas delgadas+malo",
+        "Fuerte: Personas obesas+bueno, Personas delgadas+malo",
+    ],
+        widget=widgets.RadioSelect
+    )
+
+    iat2_self_assessment = models.StringField(
+        label="¿Cómo crees que te fue en el IAT de Personas homosexuales y Personas heterosexuales?",
         choices=[
             "Neutral",
-            "Asociación leve a personas obesas+feliz, personas delgadas+triste",
-            "Asociación leve a personas obesas+triste, personas delgadas+feliz",
-            "Asociación moderada a personas obesas+feliz, personas delgadas+triste",
-            "Asociación moderada a personas obesas+triste, personas delgadas+feliz",
-            "Asociación fuerte a personas obesas+feliz, personas delgadas+triste",
-            "Asociación fuerte a personas obesas+triste, personas delgadas+feliz",
+            "Leve: Personas heterosexuales+bueno, Personas homosexuales+malo",
+            "Moderada: Personas heterosexuales+bueno, Personas homosexuales+malo",
+            "Fuerte: Personas heterosexuales+bueno, Personas homosexuales+malo",
+            "Leve: Personas homosexuales+bueno, Personas heterosexuales+malo",
+            "Moderada: Personas homosexuales+bueno, Personas heterosexuales+malo",
+            "Fuerte: Personas homosexuales+bueno, Personas heterosexuales+malo",
         ],
         widget=widgets.RadioSelect
     )
 
-    # Variables para el rango moralmente aceptable del IAT 1. nota: hay que cambiar esto para que vayan de -2 a 2.
+    # Variables para el rango moralmente aceptable del iat 1. nota: hay que cambiar esto para que vayan de -2 a 2.
     iat2_lower_limit = models.FloatField(
-        label="¿Cuál es el límite inferior del rango moralmente aceptable para el IAT personas homosexuales y personas heterosexuales?",
+        label="¿Cuál es el límite inferior del rango aceptable para el IAT Personas homosexuales y Personas heterosexuales?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
     iat2_upper_limit = models.FloatField(
-        label="¿Cuál es el límite superior del rango moralmente aceptable para el IAT personas homosexuales y personas heterosexuales?",
+        label="¿Cuál es el límite superior del rango aceptable para el IAT Personas homosexuales y Personas heterosexuales?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
-    # Variables para el rango moralmente aceptable del IAT 2
+    # Variables para el rango moralmente aceptable del iat 2
     iat1_lower_limit = models.FloatField(
-        label="¿Cuál es el límite inferior del rango moralmente aceptable para el IAT personas obesas y personas delgadas?",
+        label="¿Cuál es el límite inferior del rango aceptable para el IAT Personas obesas y Personas delgadas?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
     iat1_upper_limit = models.FloatField(
-        label="¿Cuál es el límite superior del rango moralmente aceptable para el IAT personas obesas y personas delgadas?",
+        label="¿Cuál es el límite superior del rango aceptable para el IAT Personas obesas y Personas delgadas?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
     iat2_probability_right = models.BooleanField(
-        label="¿Quieres que se te muestre información sobre personas homosexuales y heterosexuales al tomar una decisión con consecuencias monetarias, si tu puntaje en el IAT queda a la derecha de tu rango moralmente aceptable?",
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "homosexuales y el otro grupo es una o más personas heterosexuales. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente homosexual y heterosexual "
+            "cae por arriba del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        choices=[(True, "Sí"), (False, "No")],
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los homosexuales y el grupo B son los heterosexuales, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
         blank=True,
-        initial=False
     )
 
     iat1_probability_left = models.BooleanField(
-        label="¿Quieres que se te revele la información sobre personas obesas y personas delgadas al tomar una decisión con consecuencias monetarias, si tu puntaje en el IAT queda a la izquierda de tu rango moralmente aceptable?",
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "obesas y el otro grupo es una o más personas delgadas. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente gorda y delgada "
+            "cae por debajo del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        choices=[(True, "Sí"), (False, "No")],
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
         blank=True,
-        initial=False
     )
 
     iat2_probability_left = models.BooleanField(
-        label="¿Quieres que se te revele la información sobre personas homosexuales y personas heterosexuales al tomar una decisión con consecuencias monetarias, si tu puntaje en el IAT queda a la izquierda de tu rango moralmente aceptable?",
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "homosexuales y el otro grupo es una o más personas heterosexuales. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente homosexual y heterosexual "
+            "cae por debajo del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        choices=[(True, "Sí"), (False, "No")],
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los homosexuales y el grupo B son los heterosexuales, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
         blank=True,
-        initial=False
     )
 
     iat1_probability_right = models.BooleanField(
-        label="¿Quieres que se te revele la información sobre personas obesas y personas delgadas al tomar una decisión con consecuencias monetarias, si tu puntaje en el IAT queda a la derecha de tu rango moralmente aceptable?",
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "obesas y el otro grupo es una o más personas delgadas. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente gorda y delgada "
+            "cae por arriba del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        choices=[(True, "Sí"), (False, "No")],
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
         blank=True,
-        initial=False
     )
 
     iat2_probability = models.BooleanField(
-        label="¿Quieres que se te revele la información sobre personas homosexuales y personas heterosexuales al tomar una decisión con consecuencias monetarias, si tu puntaje en el IAT queda dentro de tu rango moralmente aceptable?",
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "homosexuales y el otro grupo es una o más personas heterosexuales. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente homosexual y heterosexual "
+            "cae en el rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        choices=[(True, "Sí"), (False, "No")],
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los homosexuales y el grupo B son los heterosexuales, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
         blank=True,
-        initial=False
     )
 
     iat1_probability = models.BooleanField(
-        label="¿Quieres que se te revele la información sobre personas obesas y personas delgadas al tomar una decisión con consecuencias monetarias, si tu puntaje en el IAT queda dentro de tu rango moralmente aceptable?",
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "obesas y el otro grupo es una o más personas delgadas. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente gorda y delgada "
+            "cae en el rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        choices=[(True, "Sí"), (False, "No")],
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
         blank=True,
-        initial=False
+    )
+
+    iat2_probability_right2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability_left2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat2_probability_left2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability_right2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat2_probability2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
     )
 
     # Variables para capturar la asociación calculada (se asignan en DictatorIntroduction)
@@ -436,16 +600,16 @@ class Player(BasePlayer):
 
     compr1_q1 = models.StringField(
         choices=[
-            ['A', 'Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['B', 'Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['C', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['D', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['E', 'Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['F', 'Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
+            ['A', 'Un puntaje bueno indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['B', 'Un puntaje bueno indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje malo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['C', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje bueno indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['D', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje malo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['E', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['F', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje bueno indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
         ],
         blank=True,
         widget=widgets.RadioSelect,
-        label="Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?"
+        label="Supón que haces una Prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?"
     )
 
     # Pregunta 2 para grupo 1 (ahora radio, no múltiple)
@@ -459,7 +623,7 @@ class Player(BasePlayer):
         ],
         blank=True,
         widget=widgets.RadioSelect,
-        label="¿Cuáles son las dos características que hacen que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?"
+        label="¿Cuáles son las dos características que hacen que la iat sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?"
     )
 
     compr1_order = models.LongStringField(
@@ -471,7 +635,7 @@ class Player(BasePlayer):
         choices=[
             ['A', 'Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'],
             ['B', 'Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'],
-            ['C', 'Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable. '],
+            ['C', 'Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la iat cayó debajo, dentro o arriba del rango que consideras aceptable. '],
         ],
         blank=True,
         widget=widgets.RadioSelect,
@@ -492,9 +656,9 @@ class Player(BasePlayer):
 
     compr1_q6 = models.StringField(
         choices=[
-            ['A', 'Ninguna decisión involucra a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las personas sobre las que te preguntamos en la Etapa 2. '],
-            ['B', 'No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las personas sobre las que te preguntamos en la Etapa 2. '],
-            ['C', 'Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2.'],
+            ['A', 'Ninguna decisión involucra a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las Personas sobre las que te preguntamos en la Etapa 2. '],
+            ['B', 'No todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las Personas sobre las que te preguntamos en la Etapa 2. '],
+            ['C', 'Todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de Personas sobre las que no te preguntamos en la Etapa 2.'],
         ],
         blank=True,
         widget=widgets.RadioSelect,
@@ -505,16 +669,16 @@ class Player(BasePlayer):
 
     compr2_q1 = models.StringField(
         choices=[
-            ['A', 'Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['B', 'Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
-            ['C', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['D', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['E', 'Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
-            ['F', 'Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
+            ['A', 'Un puntaje bueno indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['B', 'Un puntaje bueno indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje malo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
+            ['C', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje bueno indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['D', 'Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje malo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['E', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
+            ['F', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje bueno indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
         ],
         blank=True,
         widget=widgets.RadioSelect,
-        label="Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?"
+        label="Supón que haces una Prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?"
     )
 
     # Pregunta 2 para grupo 2 (igual)
@@ -528,7 +692,7 @@ class Player(BasePlayer):
         ],
         blank=True,
         widget=widgets.RadioSelect,
-        label="¿Cuáles son las dos características que hacen que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?"
+        label="¿Cuáles son las dos características que hacen que la iat sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?"
     )
 
     compr2_order = models.LongStringField(
@@ -540,7 +704,7 @@ class Player(BasePlayer):
         choices=[
             ['A', 'Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'],
             ['B', 'Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'],
-            ['C', 'Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable.'],
+            ['C', 'Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la iat cayó debajo, dentro o arriba del rango que consideras aceptable.'],
         ],
         blank=True,
         widget=widgets.RadioSelect,
@@ -561,9 +725,9 @@ class Player(BasePlayer):
 
     compr2_q6 = models.StringField(
         choices=[
-            ['A', 'Ninguna decisión involucra a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las personas sobre las que te preguntamos en la Etapa 2.'],
-            ['B', 'No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las personas sobre las que te preguntamos en la Etapa 2.'],
-            ['C', 'Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2.'],
+            ['A', 'Ninguna decisión involucra a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las Personas sobre las que te preguntamos en la Etapa 2.'],
+            ['B', 'No todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las Personas sobre las que te preguntamos en la Etapa 2.'],
+            ['C', 'Todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de Personas sobre las que no te preguntamos en la Etapa 2.'],
         ],
         blank=True,
         widget=widgets.RadioSelect,
@@ -621,7 +785,7 @@ def set_payoffs(group: Group):
 class Trial(ExtraModel):
     """A record of single iteration
     Keeps corner categories from round setup to simplify furher analysis.
-    The stimulus class is for appropriate styling on page.   
+    The stimulus class is for appropriate styling on page.
     """
 
     player = models.Link(Player)
@@ -715,7 +879,7 @@ def custom_export(players):
 
     ]
     for p in players:
-        if p.round_number not in (3, 4, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18):
+        if p.round_number not in (3, 4, 6, 7, 10, 11, 13, 14, 15, 16):
             continue
         participant = p.participant
         session = p.session
@@ -846,7 +1010,7 @@ def play_game(player: Player, message: dict):
 
 class Intro(Page):
     # comentario en caso de ser necesario: cambié está página para que se
-    # pudiera mostrar los labels correctos de inicios del IAT, pero causó un
+    # pudiera mostrar los labels correctos de inicios del iat, pero causó un
     # problema con el primer intento, si esto vuelve a suceder, regresar al
     # sigueiente código:
     #     @staticmethod
@@ -901,7 +1065,7 @@ class RoundN(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        # Mostrar solo en rondas de IAT
+        # Mostrar solo en rondas de iat
         return player.round_number <= 14
 
     @staticmethod
@@ -1083,12 +1247,14 @@ class Feedback1(Page):
     def vars_for_template(player: Player):
         # Respuestas correctas
         correct = {
-            'compr1_q1': 'E',
-            'compr1_q2': ['B'],
-            'compr1_order': "",
-            'compr1_q4': 'C',
-            'compr1_q5': 'D',
-            'compr1_q6': 'B',
+            'compr1_q1': 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. ',
+            'compr1_q2': 'Primero, está ligado a comportamientos relevantes en el mundo real. Segundo, es difícil de manipular ya que mide tu respuesta automática, sin que hayas tenido tiempo de pensar.',
+            'compr1_order': "Sociodemográfica, Pruebas de asociación implícita, Adivinas tus puntajes en las pruebas de la Etapa 2, "
+                            "Rango aceptable de puntajes en las pruebas de la Etapa 2, Qué información revelar en las decisiones de la Etapa 6, "
+                            "Decisiones monetarias que pueden afectar a grupos de la Etapa 2",
+            'compr1_q4': 'Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la iat cayó debajo, dentro o arriba del rango que consideras aceptable. ',
+            'compr1_q5': 'Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.',
+            'compr1_q6': 'No todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las Personas sobre las que te preguntamos en la Etapa 2. ',
         }
         # Explicaciones
         explanation = {
@@ -1096,20 +1262,18 @@ class Feedback1(Page):
                 "Tu puntaje se compara con los datos de Project Implicit, una base con cientos de miles de participantes. "
                 "Una puntuación de cero representa el promedio de dicha base. La interpretación del puntaje depende "
                 "de cuál de los dos grupos es el grupo “base” para fines de la comparación. En la pregunta, el grupo B "
-                "es el grupo “base”. Un puntaje positivo indicaría que, comparado a la base de datos de Project Implicit, "
-                "el/la participante asocia con mayor facilidad a los del grupo B con los atributos positivos en comparación "
-                "con la asociación que hace con los del grupo A. Un puntaje negativo indica una asociación relativamente "
-                "más fuerte de los del grupo A con atributos positivos en comparación con la asociación con los del grupo B."
+                "es el grupo “base”. Un puntaje bueno indicaría que, comparado a la base de datos de Project Implicit, "
+                "el/la participante asocia con mayor facilidad a los del grupo B con los atributos buenos en comparación "
+                "con la asociación que hace con los del grupo A. Un puntaje malo indica una asociación relativamente "
+                "más fuerte de los del grupo A con atributos buenos en comparación con la asociación con los del grupo B."
             ),
             'compr1_q2': (
-                "Como mostramos con los estudios que mencionamos, hay mucha evidencia que la Prueba de Asociación Implícita "
+                "Como mostramos con los estudios que mencionamos, hay mucha evidencia que la iat "
                 "está ligada a comportamientos relevantes en el mundo real. A diferencia de otras pruebas, la Prueba de Asociación "
                 "Implícita es difícil de manipular ya que mide tu respuesta automática—tu primera reacción, sin haber tenido tiempo "
                 "para pensar."
             ),
-            'compr1_order': ("Sociodemográfica, Pruebas de asociación implícita, Adivinas tus puntajes en las pruebas de la Etapa 2, "
-                            "Rango aceptable de puntajes en las pruebas de la Etapa 2, Qué información revelar en las decisiones de la Etapa 6, "
-                            "Decisiones monetarias que pueden afectar a grupos de la Etapa 2"),
+            'compr1_order': (""),
             'compr1_q4': (
                 "No es directa la decisión sobre la información que se te revela—no te vamos a preguntar simplemente si quieres "
                 "que se te revele la información sobre cada grupo. En vez de eso, la decisión va a depender de tus puntajes en "
@@ -1121,14 +1285,14 @@ class Feedback1(Page):
                 "20% de probabilidad sí te revelamos la identidad de los grupos C y D."
             ),
             'compr1_q6': (
-                "No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en la Etapa 2, y es posible "
-                "que incluyamos decisiones que afecten a grupos de personas sobre las que no te preguntamos en la Etapa 2."
+                "No todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en la Etapa 2, y es posible "
+                "que incluyamos decisiones que afecten a grupos de Personas sobre las que no te preguntamos en la Etapa 2."
             ),
         }
         # Labels manuales
         labels = {
-            'compr1_q1': "Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?",
-            'compr1_q2': "¿Cuáles son las dos características que hace que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?",
+            'compr1_q1': "Supón que haces una Prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?",
+            'compr1_q2': "¿Cuáles son las dos características que hace que la iat sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?",
             'compr1_order': "Arrastra las etapas para ponerlas en el orden correcto:" ,
             'compr1_q4': "En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?",
             'compr1_q5': "Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?",
@@ -1182,13 +1346,13 @@ class Feedback2(Page):
                 "Tu puntaje se compara con los datos de Project Implicit, una base con cientos de miles de participantes. "
                 "Una puntuación de cero representa el promedio de dicha base. La interpretación del puntaje depende "
                 "de cuál de los dos grupos es el grupo “base” para fines de la comparación. En la pregunta, el grupo B "
-                "es el grupo “base”. Un puntaje positivo indicaría que, comparado a la base de datos de Project Implicit, "
-                "el/la participante asocia con mayor facilidad a los del grupo B con los atributos positivos en comparación "
-                "con la asociación que hace con los del grupo A. Un puntaje negativo indica una asociación relativamente "
-                "más fuerte de los del grupo A con atributos positivos en comparación con la asociación con los del grupo B."
+                "es el grupo “base”. Un puntaje bueno indicaría que, comparado a la base de datos de Project Implicit, "
+                "el/la participante asocia con mayor facilidad a los del grupo B con los atributos buenos en comparación "
+                "con la asociación que hace con los del grupo A. Un puntaje malo indica una asociación relativamente "
+                "más fuerte de los del grupo A con atributos buenos en comparación con la asociación con los del grupo B."
             ),
             'compr2_q2': (
-                "Como mostramos con los estudios que mencionamos, hay mucha evidencia que la Prueba de Asociación Implícita "
+                "Como mostramos con los estudios que mencionamos, hay mucha evidencia que la iat "
                 "está ligada a comportamientos relevantes en el mundo real. A diferencia de otras pruebas, la Prueba de Asociación "
                 "Implícita es difícil de manipular ya que mide tu respuesta automática—tu primera reacción, sin haber tenido tiempo "
                 "para pensar."
@@ -1209,14 +1373,14 @@ class Feedback2(Page):
                 "de probabilidad sí te revelamos la identidad de los grupos C y D."
             ),
             'compr2_q6': (
-                "No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en la Etapa 2, y es posible "
-                "que incluyamos decisiones que afecten a grupos de personas sobre las que no te preguntamos en la Etapa 2."
+                "No todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en la Etapa 2, y es posible "
+                "que incluyamos decisiones que afecten a grupos de Personas sobre las que no te preguntamos en la Etapa 2."
             ),
         }
         # Labels manuales (igual a los que pusiste en tu modelo)
         labels = {
-            'compr2_q1': "Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?",
-            'compr2_q2': "¿Cuáles son las dos características que hace que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?",
+            'compr2_q1': "Supón que haces una Prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?",
+            'compr2_q2': "¿Cuáles son las dos características que hace que la iat sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?",
             'compr2_order': "Arrastra las etapas para ponerlas en el orden correcto:",
             'compr2_q4': "En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?",
             'compr2_q5': "Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?",
@@ -1237,27 +1401,30 @@ class Feedback2(Page):
             })
         return {'feedback': feedback}
 
-
-class InstruccionesGenerales(Page):
+class InstruccionesGenerales1(Page):
     @staticmethod
-    def is_displayed(player):
-        return not player.participant.vars.get('user_generales1_completed', False)
+    def is_displayed(player: Player):
+        return (
+            player.participant.vars.get('iat_round_order') == list(range(1, 15))
+            and not player.participant.vars.get('user_generales1_completed', False)
+        )
 
     @staticmethod
-    def before_next_page(player, timeout_happened):
+    def before_next_page(player: Player, timeout_happened):
         player.participant.vars['user_generales1_completed'] = True
 
 
 class InstruccionesGenerales2(Page):
     @staticmethod
-    def is_displayed(player):
+    def is_displayed(player: Player):
         return (
-            player.participant.vars.get('user_generales1_completed', False)
+            player.participant.vars.get('iat_round_order')
+                == (list(range(8, 15)) + list(range(1, 8)))
             and not player.participant.vars.get('user_generales2_completed', False)
         )
 
     @staticmethod
-    def before_next_page(player, timeout_happened):
+    def before_next_page(player: Player, timeout_happened):
         player.participant.vars['user_generales2_completed'] = True
 
 class InstruccionesGenerales3(Page):
@@ -1280,10 +1447,10 @@ class IATAssessmentPage(Page):
     form_fields = [
         'iat1_self_assessment',
         'iat2_self_assessment',
-        'iat2_lower_limit',  # Límite inferior para el IAT negro blanco
-        'iat2_upper_limit',  # Límite superior para el IAT negro blanco
-        'iat1_lower_limit',  # Límite inferior para el IAT blanco negro
-        'iat1_upper_limit'  # Límite superior para el IAT blanco negro
+        'iat2_lower_limit',  # Límite inferior para el iat negro blanco
+        'iat2_upper_limit',  # Límite superior para el iat negro blanco
+        'iat1_lower_limit',  # Límite inferior para el iat blanco negro
+        'iat1_upper_limit'  # Límite superior para el iat blanco negro
     ]
 
     @staticmethod
@@ -1309,14 +1476,14 @@ class IATAssessmentPage(Page):
             ]
             return [t.reaction_time for t in trials]
 
-        # Extraer datos para el primer IAT (rondas 3, 4, 6, 7)
+        # Extraer datos para el primer iat (rondas 3, 4, 6, 7)
         data3 = extract(3)
         data4 = extract(4)
         data6 = extract(6)
         data7 = extract(7)
         dscore1_result = dscore1(data3, data4, data6, data7)
 
-        # Extraer datos para el segundo IAT (rondas 10, 13, 11, 14)
+        # Extraer datos para el segundo iat (rondas 10, 13, 11, 14)
         data10 = extract(10)
         data13 = extract(13)
         data11 = extract(11)
@@ -1343,40 +1510,40 @@ class IATAssessmentPage(Page):
             if dscore < 0:
                 if -0.35 <= dscore <= -0.15:
                     if category == "Personas obesas/Personas delgadas":
-                        return "Leve: Personas delgadas positivo, Personas obesas negativo"
+                        return "Leve: Personas delgadas+bueno, Personas obesas+malo"
                     else:  # Personas homosexuales/Personas heterosexuales
-                        return "Leve: Personas heterosexuales positivo, Personas homosexuales negativo "
+                        return "Leve: Personas heterosexuales+bueno, Personas homosexuales+malo"
                 elif -0.65 <= dscore < -0.35:
                     if category == "Personas obesas/Personas delgadas":
-                        return "Moderada: Personas delgadas positivo, Personas obesas negativo"
+                        return "Moderada: Personas delgadas+bueno, Personas obesas+malo"
                     else:
-                        return "Moderada: Personas heterosexuales positivo, Personas homosexuales negativo "
+                        return "Moderada: Personas heterosexuales+bueno, Personas homosexuales+malo"
                 elif -2 <= dscore < -0.65:
                     if category == "Personas obesas/Personas delgadas":
-                        return "Fuerte: Personas delgadas positivo, Personas obesas negativo"
+                        return "Fuerte: Personas delgadas+bueno, Personas obesas+malo"
                     else:
-                        return "Fuerte: Personas heterosexuales positivo, Personas homosexuales negativo "
+                        return "Fuerte: Personas heterosexuales+bueno, Personas homosexuales+malo"
             else:  # dscore > 0
                 if 0.15 <= dscore <= 0.35:
                     if category == "Personas obesas/Personas delgadas":
-                        return "Leve: Personas obesas positivo, Personas delgadas negativo"
+                        return "Leve: Personas obesas+bueno, Personas delgadas+malo"
                     else:
-                        return "Leve: Personas homosexuales positivo, Personas heterosexuales negativo"
+                        return "Leve: Personas homosexuales+bueno, Personas heterosexuales+malo"
                 elif 0.35 < dscore <= 0.65:
                     if category == "Personas obesas/Personas delgadas":
-                        return "Moderada: Personas obesas positivo, Personas delgadas negativo"
+                        return "Moderada: Personas obesas+bueno, Personas delgadas+malo"
                     else:
-                        return "Moderada: Personas homosexuales positivo, Personas heterosexuales negativo"
+                        return "Moderada: Personas homosexuales+bueno, Personas heterosexuales+malo"
                 elif 0.65 < dscore <= 2:
                     if category == "Personas obesas/Personas delgadas":
-                        return "Fuerte: Personas obesas positivo, Personas delgadas negativo"
+                        return "Fuerte: Personas obesas+bueno, Personas delgadas+malo"
                     else:
-                        return "Fuerte: Personas homosexuales positivo, Personas heterosexuales negativo"
+                        return "Fuerte: Personas homosexuales+bueno, Personas heterosexuales+malo"
             return "Sin clasificación"
 
         # Se asigna la asociación de forma fija:
-        # - IAT1 corresponde siempre a "Personas obesas/Personas delgadas"
-        # - IAT2 corresponde siempre a "Personas homosexuales/Personas heterosexuales"
+        # - iat1 corresponde siempre a "Personas obesas/Personas delgadas"
+        # - iat2 corresponde siempre a "Personas homosexuales/Personas heterosexuales"
         player.iat1_association = clasificar(player.dscore1, "Personas obesas/Personas delgadas")
         player.iat2_association = clasificar(player.dscore2, "Personas homosexuales/Personas heterosexuales")
 
@@ -1390,51 +1557,6 @@ class IATAssessmentPage(Page):
         )
 
     @staticmethod
-    def convert_computed(association: str, category: str) -> str:
-        """
-        Convierte el string de asociación calculado al formato de las opciones de la autoevaluación.
-
-        Para "Personas homosexuales/Personas heterosexuales":
-            - "Personas homosexuales positivo" se convierte en "Personas homosexuales+bueno"
-            - "Personas heterosexuales negativo" se convierte en "Personas heterosexuales+malo"
-            - "Personas heterosexuales positivo" se convierte en "Personas heterosexuales+bueno"
-            - "Personas homosexuales negativo" se convierte en "Personas homosexuales+malo"
-
-        Para "Personas obesas/Personas delgadas":
-            - "Personas obesas bueno" se convierte en "Personas obesas+bueno"
-            - "Personas delgadas" se convierte en "Personas delgadas+malo"
-            - "Personas delgadas positivo" se convierte en "Personas delgadas+bueno"
-            - "Personas obesas negativo" se convierte en "gato+malo"
-
-        Además, transforma el prefijo:
-            - "Leve: "    → "Asociación leve a "
-            - "Moderada: " → "Asociación moderada a "
-            - "Fuerte: "   → "Asociación fuerte a "
-        """
-        if association == "Neutral":
-            return "Neutral"
-        if association.startswith("Leve: "):
-            prefix, rest = "Asociación leve a ", association[len("Leve: "):]
-        elif association.startswith("Moderada: "):
-            prefix, rest = "Asociación moderada a ", association[len("Moderada: "):]
-        elif association.startswith("Fuerte: "):
-            prefix, rest = "Asociación fuerte a ", association[len("Fuerte: "):]
-        else:
-            prefix, rest = "", association
-
-        if category == "Personas homosexuales/Personas heterosexuales":
-            rest = rest.replace("Personas homosexuales positivo", "Persona homosexual+bueno") \
-                .replace("Persona heterosexual negativo", "Persona heterosexual+malo") \
-                .replace("Persona heterosexual positivo", "Persona heterosexual+bueno") \
-                .replace("Personas homosexuales negativo", "Personas homosexuales+malo")
-        elif category == "Personas obesas/Personas delgadas":
-            rest = rest.replace("Personas obesas positivo", "Personas obesas+bueno") \
-                .replace("Personas delgadas negativo", "Personas delgadas+malo") \
-                .replace("Personas delgadas positivo", "Personas delgadas+bueno") \
-                .replace("Personas obesas negativo", "Personas obesas+malo")
-        return prefix + rest
-
-    @staticmethod
     def before_next_page(player: Player, timeout_happened):
         participant = player.participant
 
@@ -1444,20 +1566,20 @@ class IATAssessmentPage(Page):
         if not player.iat2_self_assessment:
             player.iat2_self_assessment = "No especificado"
 
-        # Marcar que la evaluación del IAT ya fue completada
+        # Marcar que la evaluación del iat ya fue completada
         participant.vars['iat_assessment_completed'] = True
 
         # Se convierte la asociación calculada al formato de las opciones
         # Fijamos:
-        # • IAT1 (gato y perro) se compara con player.iat1_association
-        # • IAT2 (blanco y negro) se compara con player.iat2_association
-        expected_iat1 = IATAssessmentPage.convert_computed(player.iat1_association, "Personas obesas/Personas delgadas")
-        expected_iat2 = IATAssessmentPage.convert_computed(player.iat2_association, "Personas homosexuales/Personas heterosexuales")
+        # • iat1 (gato y perro) se compara con player.iat1_association
+        # • iat2 (blanco y negro) se compara con player.iat2_association
+        expected_iat1 = player.iat1_association
+        expected_iat2 = player.iat2_association
 
         player.iat1_guess_correct = (player.iat1_self_assessment == expected_iat1)
         player.iat2_guess_correct = (player.iat2_self_assessment == expected_iat2)
 
-        # Validación de los rangos morales para IAT 1 y IAT 2
+        # Validación de los rangos morales para iat 1 y iat 2
         iat1_moral_range = (
                 player.dscore1 >= player.iat1_lower_limit and
                 player.dscore1 <= player.iat1_upper_limit
@@ -1468,7 +1590,7 @@ class IATAssessmentPage(Page):
                 player.dscore2 <= player.iat2_upper_limit
         )
 
-        # Validación de los rangos para IAT 1 y IAT 2 en el rango izquierdo
+        # Validación de los rangos para iat 1 y iat 2 en el rango izquierdo
         iat1_moral_range_left = (
                 player.dscore1 < player.iat1_lower_limit
         )
@@ -1477,7 +1599,7 @@ class IATAssessmentPage(Page):
                 player.dscore2 < player.iat2_lower_limit
         )
 
-        # Validación de los rangos para IAT 1 y IAT 2 en el rango derecho
+        # Validación de los rangos para iat 1 y iat 2 en el rango derecho
         iat1_moral_range_right = (
                 player.dscore1 > player.iat1_upper_limit
         )
@@ -1494,62 +1616,70 @@ class IATAssessmentPage(Page):
         player.iat1_moral_range_right = iat1_moral_range_right
         player.iat2_moral_range_right = iat2_moral_range_right
 
+        # iatAssessmentPage.before_next_page
+        participant.vars['iat1_moral_range'] = player.iat1_moral_range
+        participant.vars['iat2_moral_range'] = player.iat2_moral_range
+        participant.vars['iat1_moral_range_left'] = player.iat1_moral_range_left
+        participant.vars['iat1_moral_range_right'] = player.iat1_moral_range_right
+        participant.vars['iat2_moral_range_left'] = player.iat2_moral_range_left
+        participant.vars['iat2_moral_range_right'] = player.iat2_moral_range_right
+
         # Configuración del logger
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
         # Registrar las asociaciones correctas y las respuestas del usuario
-        logging.info("Asociación IAT1 (Personas obesas/Personas delgadas) esperada: %s", expected_iat1)
-        logging.info("Asociación IAT1 (Personas obesas/Personas delgadas) ingresada por el usuario: %s",
+        logging.info("Asociación iat1 (Personas obesas/Personas delgadas) esperada: %s", expected_iat1)
+        logging.info("Asociación iat1 (Personas obesas/Personas delgadas) ingresada por el usuario: %s",
                      player.iat1_self_assessment)
-        logging.info("Asociación IAT2 (Personas homosexuales/Personas heterosexuales) esperada: %s", expected_iat2)
-        logging.info("Asociación IAT2 (Personas homosexuales/Personas heterosexuales) ingresada por el usuario: %s",
+        logging.info("Asociación iat2 (Personas homosexuales/Personas heterosexuales) esperada: %s", expected_iat2)
+        logging.info("Asociación iat2 (Personas homosexuales/Personas heterosexuales) ingresada por el usuario: %s",
                      player.iat2_self_assessment)
 
-        logging.info("Resultado de la adivinanza IAT1 (Personas obesas/Personas delgadas): %s",
+        logging.info("Resultado de la adivinanza iat1 (Personas obesas/Personas delgadas): %s",
                      player.iat1_guess_correct)
-        logging.info("Resultado de la adivinanza IAT2 (Personas homosexuales/Personas heterosexuales): %s",
+        logging.info("Resultado de la adivinanza iat2 (Personas homosexuales/Personas heterosexuales): %s",
                      player.iat2_guess_correct)
 
-        logging.info("¿El IAT Personas obesas/Personas delgadas está dentro del rango moral del jugador? %s",
+        logging.info("¿El iat Personas obesas/Personas delgadas está dentro del rango moral del jugador? %s",
                      player.iat1_moral_range)
         logging.info(
-            "¿El IAT Personas homosexuales/Personas heterosexuales está dentro del rango moral del jugador? %s",
+            "¿El iat Personas homosexuales/Personas heterosexuales está dentro del rango moral del jugador? %s",
             player.iat2_moral_range)
 
-        # Logs adicionales para especificar si el IAT está a la izquierda, derecha o en el rango
+        # Logs adicionales para especificar si el iat está a la izquierda, derecha o en el rango
         if iat1_moral_range:
-            logging.info("El IAT1 (Personas obesas/Personas delgadas) está dentro del rango moral.")
+            logging.info("El iat1 (Personas obesas/Personas delgadas) está dentro del rango moral.")
         elif iat1_moral_range_left:
-            logging.info("El IAT1 (Personas obesas/Personas delgadas) está a la izquierda del rango moral.")
+            logging.info("El iat1 (Personas obesas/Personas delgadas) está a la izquierda del rango moral.")
         else:
-            logging.info("El IAT1 (Personas obesas/Personas delgadas) está a la derecha del rango moral.")
+            logging.info("El iat1 (Personas obesas/Personas delgadas) está a la derecha del rango moral.")
 
         if iat2_moral_range:
-            logging.info("El IAT2 (Personas homosexuales/Personas heterosexuales) está dentro del rango moral.")
+            logging.info("El iat2 (Personas homosexuales/Personas heterosexuales) está dentro del rango moral.")
         elif iat2_moral_range_left:
-            logging.info("El IAT2 (Personas homosexuales/Personas heterosexuales) está a la izquierda del rango moral.")
+            logging.info("El iat2 (Personas homosexuales/Personas heterosexuales) está a la izquierda del rango moral.")
         else:
-            logging.info("El IAT2 (Personas homosexuales/Personas heterosexuales) está a la derecha del rango moral.")
+            logging.info("El iat2 (Personas homosexuales/Personas heterosexuales) está a la derecha del rango moral.")
 
 
     @staticmethod
     def error_message(player, values):
         if not values.get('iat1_self_assessment'):
-            return "Por favor, selecciona una opción para el IAT de Personas obesas y Personas delgadas."
+            return "Por favor, selecciona una opción para el iat de Personas obesas y Personas delgadas."
         if not values.get('iat2_self_assessment'):
-            return "Por favor, selecciona una opción para el IAT de Personas homosexuales y Personas heterosexuales."
+            return "Por favor, selecciona una opción para el iat de Personas homosexuales y Personas heterosexuales."
         if values.get('iat2_lower_limit') is None:
-            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del IAT de Personas homosexuales y Personas heterosexuales."
+            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del iat de Personas homosexuales y Personas heterosexuales."
         if values.get('iat2_upper_limit') is None:
-            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del IAT de Personas homosexuales y Personas heterosexuales."
+            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del iat de Personas homosexuales y Personas heterosexuales."
         if values['iat2_lower_limit'] >= values['iat2_upper_limit']:
-            return "El límite inferior para el IAT de Personas homosexuales y Personas heterosexuales debe ser menor que el límite superior."
+            return "El límite inferior para el iat de Personas homosexuales y Personas heterosexuales debe ser menor que el límite superior."
         if values.get('iat1_lower_limit') is None:
-            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del IAT de Personas obesas y Personas delgadas."
+            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del iat de Personas obesas y Personas delgadas."
         if values.get('iat1_upper_limit') is None:
-            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del IAT de Personas obesas y Personas delgadas."
+            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del iat de Personas obesas y Personas delgadas."
         if values['iat1_lower_limit'] >= values['iat1_upper_limit']:
-            return "El límite inferior para el IAT de Personas obesas y Personas delgadas debe ser menor que el límite superior."
+            return "El límite inferior para el iat de Personas obesas y Personas delgadas debe ser menor que el límite superior."
 
 
 # si Mauricio dice que quiere que el recordatorio se haga entre cada pregunta, tengo que dejar de usar formfields y crer
@@ -1559,16 +1689,26 @@ class MoralDecisionPageCerteza(Page):
     form_fields = [
         'iat1_probability',
         'iat2_probability',
-        'iat1_probability_left',
-        'iat2_probability_left',
-        'iat1_probability_right',
-        'iat2_probability_right',
     ]
     # aquí puedo considerar agregar validaciones al formulario para que el usuario no pueda agregar puntuaciones muy pequeñas al programa, con muchos números.
 
     @staticmethod
-    def is_displayed(player):
-        return player.round_number == 15
+    def error_message(player, values):
+        errors = {}
+        for field in MoralDecisionPageCerteza.form_fields:
+            # Checa None o cadena vacía
+            if values.get(field) in (None, ''):
+                errors[field] = 'Por favor completa este campo antes de continuar.'
+        return errors or None
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Only show to participants with iat order 1-14 and not shown yet
+        return (
+                player.round_number == 15 and
+                player.participant.vars.get('iat_round_order') == list(range(1, 15))
+                and not player.participant.vars.get('certeza_shown', False)
+        )
 
     @staticmethod
     def vars_for_template(player):
@@ -1584,13 +1724,72 @@ class MoralDecisionPageCerteza(Page):
             'iat2_upper_limit': player.iat2_upper_limit,
         }
 
-   
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        part = player.participant
+        part.vars['iat1_probability']        = player.iat1_probability
+        part.vars['iat2_probability']        = player.iat2_probability
+
+class MoralDecisionPageCerteza2(Page):
+    form_model = 'player'
+    form_fields = [
+        'iat1_probability2',
+        'iat2_probability2',
+        'iat1_probability_left2',
+        'iat2_probability_left2',
+        'iat1_probability_right2',
+        'iat2_probability_right2',
+    ]
+    # aquí puedo considerar agregar validaciones al formulario para que el usuario no pueda agregar puntuaciones muy pequeñas al programa, con muchos números.
+    @staticmethod
+    def error_message(player, values):
+        errors = {}
+        for field in MoralDecisionPageCerteza2.form_fields:
+            # Checa None o cadena vacía
+            if values.get(field) in (None, ''):
+                errors[field] = 'Por favor completa este campo antes de continuar.'
+        return errors or None
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Show to participants with the alternate iat order and not shown yet
+        alternate_order = list(range(8, 15)) + list(range(1, 8))
+        return (
+            player.round_number == 15 and
+            player.participant.vars.get('iat_round_order') == alternate_order
+            and not player.participant.vars.get('certeza2_shown', False)
+        )
+
+    @staticmethod
+    def vars_for_template(player):
+        iat1_moral_range = player.dscore1 >= player.iat1_lower_limit and player.dscore1 <= player.iat1_upper_limit
+        iat2_moral_range = player.dscore2 >= player.iat2_lower_limit and player.dscore2 <= player.iat2_upper_limit
+
+        return {
+            'iat1_moral_range': iat1_moral_range,
+            'iat2_moral_range': iat2_moral_range,
+            'iat1_lower_limit': player.iat1_lower_limit,
+            'iat1_upper_limit': player.iat1_upper_limit,
+            'iat2_lower_limit': player.iat2_lower_limit,
+            'iat2_upper_limit': player.iat2_upper_limit,
+        }
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        part = player.participant
+        part.vars['iat1_probability2']        = player.iat1_probability2
+        part.vars['iat2_probability2']        = player.iat2_probability2
+        part.vars['iat1_probability_left2']   = player.iat1_probability_left2
+        part.vars['iat2_probability_left2']   = player.iat2_probability_left2
+        part.vars['iat1_probability_right2']  = player.iat1_probability_right2
+        part.vars['iat2_probability_right2']  = player.iat2_probability_right2
 
 # queda por introducir la función que propuse para esta clase, está en esta página: https://chatgpt.com/g/g-p-6770700264fc81918f62555c338c6f02-literature-review-iat/c/67a0f18e-087c-800c-966d-f4186e249d2e?model=o3-mini-high
 class DictatorIntroduction(Page):
     """
     Página de introducción al Juego del Dictador para la categoría asignada.
     """
+    template_name = 'iat/DictatorIntroduction.html'
 
     @staticmethod
     def is_displayed(player: Player):
@@ -1602,174 +1801,312 @@ class DictatorIntroduction(Page):
             endowment=Constants.endowment,
         )
 
+def _active_flags(moral_left, moral_right,
+                  p_in, p_left, p_right):
+    """
+    Devuelve los flags (p_in, p_left, p_right) que
+    corresponden al lado correcto.
+    """
+    if moral_left or moral_right:
+        # está fuera del rango: solo vale uno de los dos lados
+        p_left  = p_left  if moral_left  else False
+        p_right = p_right if moral_right else False
+    # dentro del rango (moral_range=True) dejamos p_in tal cual
+    return p_in, p_left, p_right
+
+
+
+from typing import Optional
+
+def _calc_threshold(
+    moral_range: Optional[bool],
+    p_in:         Optional[bool],
+    p_left:       Optional[bool],
+    p_right:      Optional[bool],
+) -> float:
+    """
+    Devuelve la probabilidad (0–1) de revelar la etiqueta explícita
+    según la preferencia declarada por el/la participante.
+
+    • moral_range  == None  → 0.80  (no contestó su rango ⇒ asumimos “Sí”)
+    • moral_range  == True  → 0.80 si p_in   ∈ {None, True}; 0.20 si p_in is False
+    • moral_range  == False
+        – si existe p_right (caso “a la derecha”):
+              0.80 si p_right ∈ {None, True}; 0.20 si p_right is False
+        – si existe p_left  (caso “a la izquierda”):
+              0.80 si p_left  ∈ {None, True}; 0.20 si p_left  is False
+        – si ambos están None (no respondió ninguno) → 0.80
+    """
+    # Caso 1 : no respondió sus límites
+    if moral_range is None:
+        return 0.80
+
+    # Caso 2 : su d-score cayó *dentro* del rango aceptable
+    if moral_range:
+        return 0.80 if (p_in is None or p_in) else 0.20
+
+    # Caso 3 : su d-score cayó *fuera* del rango
+    # ——— a la derecha del rango
+    if p_right is not None:
+        return 0.80 if p_right else 0.20
+    # ——— a la izquierda del rango
+    if p_left is not None:
+        return 0.80 if p_left else 0.20
+    # Si no contestó ningún flag específico, asumimos “Sí”
+    return 0.80
+
+def split_groups(cat_string: str):
+    """
+    Devuelve los nombres de los grupos A y B a partir del string completo
+    de categoría (por ejemplo 'personas delgadas y personas obesas').
+
+    Si la categoría no coincide con los dos pares que manejamos,
+    regresa los nombres genéricos 'Grupo A' y 'Grupo B'.
+    """
+    cat_lower = (cat_string or "").lower()
+
+    if "personas delgadas" in cat_lower and "personas obesas" in cat_lower:
+        return Constants.PersonasDelgadas, Constants.PersonasObesas
+
+    if "personas heterosexuales" in cat_lower and "personas homosexuales" in cat_lower:
+        return Constants.PersonasHeterosexuales, Constants.PersonasHomosexuales
+
+    # Fallback genérico
+    return "Grupo A", "Grupo B"
+
 
 class DictatorOffer(Page):
+    form_model = 'group'
+    form_fields = ['kept']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        rotated = list(range(1, 8)) + list(range(8, 15))
+        return (
+            player.round_number in (15, 16)
+            and player.participant.vars.get("iat_round_order") == rotated
+        )
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        import random
+
+        # Datos de la categoría y etiqueta explícita
+        original_category = player.group.dictator_category or ""
+        explicit_label = original_category.capitalize() if original_category else "Sin categoría asignada"
+
+        part_vars = player.participant.vars
+
+        # Selección del usuario
+        user_pref = part_vars.get('iat1_probability') if "delgadas" in original_category.lower() else part_vars.get('iat2_probability')
+
+        # Umbral según preferencia
+        threshold = 0.8 if user_pref else 0.2
+
+        # Generación de la probabilidad
+        rand_val = random.random()
+
+        # Decisión final
+        display_label = explicit_label if rand_val < threshold else "Miembro del grupo"
+
+        # DEBUG reducido
+        print(f"[DEBUG] user_pref={user_pref}, threshold={threshold}, rand_val={rand_val}, label={display_label}")
+
+        # Guardar para resultados
+        player.participant.vars[f"visible_category_round_{player.round_number}"] = display_label
+
+        # Nombres de grupos
+        group_a, group_b = split_groups(original_category)
+
+        return dict(
+            category=display_label,
+            endowment=Constants.endowment,
+            group_a=group_a,
+            group_b=group_b,
+        )
+
+    @staticmethod
+    def error_message(player, values):
+        kept = values["kept"]
+        if kept < 0 or kept > Constants.endowment:
+            return f"Por favor, ofrece una cantidad entre 0 y {Constants.endowment}."
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        set_payoffs(player.group)
+
+
+
+class DictatorOffer2(Page):
     """
-    Página donde el jugador decide cuánto mantener y cuánto asignar a la categoría.
+    Página donde el jugador decide cuánto mantener y cuánto asignar a la categoría,
+    para quienes tienen el ordering invertido.
     """
     form_model = 'group'
     form_fields = ['kept']
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number in [15, 16, 17, 18]
+        alternate = list(range(8, 15)) + list(range(1, 8))
+        return (
+            player.round_number in (15, 16)
+            and player.participant.vars.get('iat_round_order') == alternate
+        )
 
     @staticmethod
     def vars_for_template(player: Player):
-        group = player.group
-        if group.dictator_category:
-            original_category = group.dictator_category.lower()
-            explicit_label = group.dictator_category.capitalize()
-        else:
-            original_category = ""
-            explicit_label = "Sin categoría asignada"
-
         import random
-        display_label = explicit_label
 
-        # Usar participant.vars para almacenar los valores de forma persistente entre rondas.
-        part_vars = player.participant.vars
+        original = player.group.dictator_category or ""
+        explicit = original.capitalize() if original else "Sin categoría asignada"
+        pv = player.participant.vars
+        cat = original.lower()
 
-        # Para IAT1: moral_range y probabilidades
-        iat1_moral_range = part_vars.get('iat1_moral_range', player.field_maybe_none("iat1_moral_range"))
-        iat1_probability = part_vars.get('iat1_probability', player.field_maybe_none("iat1_probability"))
-        iat1_probability_left = part_vars.get('iat1_probability_left', player.field_maybe_none("iat1_probability_left"))
-        iat1_probability_right = part_vars.get('iat1_probability_right', player.field_maybe_none("iat1_probability_right"))
+        # flags y rango según categoría
+        if "delgadas" in cat:
+            raw_in = pv.get("iat1_probability2")
+            raw_left = pv.get("iat1_probability_left2")
+            raw_right = pv.get("iat1_probability_right2")
+            mor_l = pv.get("iat1_moral_range_left")
+            mor_r = pv.get("iat1_moral_range_right")
+            mor = pv.get("iat1_moral_range")
+        else:
+            raw_in = pv.get("iat2_probability2")
+            raw_left = pv.get("iat2_probability_left2")
+            raw_right = pv.get("iat2_probability_right2")
+            mor_l = pv.get("iat2_moral_range_left")
+            mor_r = pv.get("iat2_moral_range_right")
+            mor = pv.get("iat2_moral_range")
 
-        # Para IAT2: moral_range y probabilidades
-        iat2_moral_range = part_vars.get('iat2_moral_range', player.field_maybe_none("iat2_moral_range"))
-        iat2_probability = part_vars.get('iat2_probability', player.field_maybe_none("iat2_probability"))
-        iat2_probability_left = part_vars.get('iat2_probability_left', player.field_maybe_none("iat2_probability_left"))
-        iat2_probability_right = part_vars.get('iat2_probability_right', player.field_maybe_none("iat2_probability_right"))
+        # 1) posición del d-score
+        if mor is True:
+            position = "dentro del rango"
+        elif mor_l:
+            position = "a la izquierda del rango"
+        elif mor_r:
+            position = "a la derecha del rango"
+        else:
+            position = "sin rango definido"
 
-        # Imprimir los valores de las variables obtenidas
-        print(f"DEBUG: iat1_moral_range: {iat1_moral_range}, iat1_probability: {iat1_probability}, "
-              f"iat1_probability_left: {iat1_probability_left}, iat1_probability_right: {iat1_probability_right}")
-        print(f"DEBUG: iat2_moral_range: {iat2_moral_range}, iat2_probability: {iat2_probability}, "
-              f"iat2_probability_left: {iat2_probability_left}, iat2_probability_right: {iat2_probability_right}")
+        # 2) aplicamos active_flags y 3) calculamos umbral
+        p_in, p_left, p_right = _active_flags(mor_l, mor_r, raw_in, raw_left, raw_right)
+        threshold = _calc_threshold(mor, p_in, p_left, p_right)
 
-        # Lógica para categorías 'perro' o 'gato' (Personas obesas/Personas delgadas)
-        if original_category in ['Personas delgadas', 'Personas obesas']:
-            substitute_label = "Personas"
-            if iat1_moral_range is None:
-                threshold = 0.8
-                print("DEBUG: iat1_moral_range es None. Probabilidad ingresada: None. Usando probabilidad por defecto del 80%.")
-            elif iat1_moral_range:  # iat1_moral_range es True
-                if iat1_probability is None:
-                    threshold = 0.8
-                    print("DEBUG: iat1_moral_range True, pero iat1_probability en Personas obesas es None. Usando probabilidad por defecto del 80%.")
-                else:
-                    threshold = iat1_probability / 100.0
-                    print(f"DEBUG: iat1_moral_range True. Probabilidad ingresada: {iat1_probability}%. Usando iat1_probability.")
-            else:  # iat1_moral_range es False
-                if iat1_probability_left is None:
-                    threshold = 0.2
-                    print("DEBUG: iat1_moral_range False, pero iat1_probability_left en Personas obesas es None. Usando probabilidad por defecto del 20%.")
-                else:
-                    threshold = iat1_probability_left / 100.0
-                    print(f"DEBUG: iat1_moral_range False. Probabilidad ingresada: {iat1_probability_left}%. Usando iat1_probability_left.")
+        # 4) aleatorio y decisión
+        rv = random.random()
+        label = explicit if rv < threshold else "Miembro del grupo"
 
-            rand_val = random.random()
-            print(f"DEBUG: Generando valor aleatorio para IAT1: {rand_val:.4f}")
-            if rand_val < threshold:
-                display_label = explicit_label
-                print(f"DEBUG: Se muestra la etiqueta explícita: {explicit_label}")
-            else:
-                display_label = substitute_label
-                print(f"DEBUG: Se muestra la etiqueta sustituida: {substitute_label}")
+        # DEBUG ampliado
+        print(
+            f"[DEBUG Offer2 ▶ rnd={player.round_number}] "
+            f"dscore {position}; "
+            f"raw_flags(in/left/right)={raw_in}/{raw_left}/{raw_right}; "
+            f"active_flags(in/left/right)={p_in}/{p_left}/{p_right}; "
+            f"threshold={threshold:.2f}; rand={rv:.2f} → '{label}'"
+        )
 
-        # Lógica para categorías 'blanco' o 'negro' (Personas homosexuales/Personas heterosexuales)
-        elif original_category in ['Personas homosexuales', 'Personas heterosexuales']:
-            substitute_label = "Personas"
-            if iat2_moral_range is None:
-                threshold = 0.8
-                print("DEBUG: iat2_moral_range es None. Probabilidad ingresada: None. Usando probabilidad por defecto del 80%.")
-            elif iat2_moral_range:  # iat2_moral_range es True
-                if iat2_probability is None:
-                    threshold = 0.8
-                    print("DEBUG: iat2_moral_range True, pero iat2_probability en Personas homosexuales es None. Usando probabilidad por defecto del 80%.")
-                else:
-                    threshold = iat2_probability / 100.0
-                    print(f"DEBUG: iat2_moral_range True. Probabilidad ingresada: {iat2_probability}%. Usando iat2_probability.")
-            else:  # iat2_moral_range es False
-                if iat2_probability_left is None:
-                    threshold = 0.2
-                    print("DEBUG: iat2_moral_range False, pero iat2_probability_left en Personas homosexuales es None. Usando probabilidad por defecto del 20%.")
-                else:
-                    threshold = iat2_probability_left / 100.0
-                    print(f"DEBUG: iat2_moral_range False. Probabilidad ingresada: {iat2_probability_left}%. Usando iat2_probability_left.")
-
-            rand_val = random.random()
-            print(f"DEBUG: Generando valor aleatorio para IAT2: {rand_val:.4f}")
-            if rand_val < threshold:
-                display_label = explicit_label
-                print(f"DEBUG: Se muestra la etiqueta explícita: {explicit_label}")
-            else:
-                display_label = substitute_label
-                print(f"DEBUG: Se muestra la etiqueta sustituida: {substitute_label}")
-
-        player.participant.vars[f'visible_category_round_{player.round_number}'] = display_label
+        # guardamos y retornamos
+        pv[f"visible_category_round_{player.round_number}"] = {
+            "label": label,
+            "full_category": original
+        }
+        group_a, group_b = split_groups(original)
         return dict(
-            category=display_label,
+            category=label,
             endowment=Constants.endowment,
+            group_a=group_a,
+            group_b=group_b,
         )
 
     @staticmethod
     def error_message(player, values):
         kept = values['kept']
-        if kept < 0 or kept > Constants.endowment:
+        if kept is None or kept < 0 or kept > Constants.endowment:
             return f"Por favor, ofrece una cantidad entre 0 y {Constants.endowment}."
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        group = player.group
-        set_payoffs(group)
+        set_payoffs(player.group)
 
+# pages.py
 
 class ResultsDictador(Page):
     @staticmethod
-    def is_displayed(player):
-        # Mostrar la página de resultados final solo en la última ronda (18)
-        return player.round_number == 18
+    def is_displayed(player: Player):
+        rotated = list(range(1, 8)) + list(range(8, 15))
+        return (
+                player.round_number == 16
+                and player.participant.vars.get("iat_round_order") == rotated
+        )
 
     @staticmethod
     def vars_for_template(player: Player):
         dictator_offers = []
-        dictator_round_numbers = [15, 16, 17, 18]
-        for rnd in dictator_round_numbers:
+        for rnd in [15, 16]:
             p = player.in_round(rnd)
-            visible_cat = player.participant.vars.get(f'visible_category_round_{rnd}', None)
+            visible_cat = player.participant.vars.get(f'visible_category_round_{rnd}')
+            original_category = p.group.dictator_category or ""
             dictator_offers.append({
                 'round': rnd,
-                'category': visible_cat.capitalize() if visible_cat else "Sin categoría asignada",
+                'category': visible_cat,          # “Miembro del grupo” o etiqueta explícita
+                'full_category': original_category,  # ej. "personas delgadas y personas obesas"
                 'kept': p.group.kept,
                 'assigned': p.group.assigned or 0,
             })
+        return dict(dictator_offers=dictator_offers)
 
-        return dict(
-            dictator_offers=dictator_offers
+
+class ResultsDictator2(Page):
+    """Resultados para participantes con ordering invertido (DictatorOffer2)."""
+    @staticmethod
+    def is_displayed(player: Player):
+        alternate = list(range(8, 15)) + list(range(1, 8))
+        return (
+            player.round_number == 16
+            and player.participant.vars.get("iat_round_order") == alternate
         )
 
-# ay,NVIDIA, te odio jaja
+    @staticmethod
+    def vars_for_template(player: Player):
+        dictator_offers = []
+        for rnd in [15, 16]:
+            p   = player.in_round(rnd)
+            vis = player.participant.vars.get(f"visible_category_round_{rnd}", {})
+            label    = vis.get("label", "Sin categoría asignada")
+            full_cat = vis.get("full_category", p.group.dictator_category or "")
+            dictator_offers.append({
+                'round':         rnd,
+                'category':      label,
+                'full_category': full_cat,
+                'kept':          p.group.kept,
+                'assigned':      p.group.assigned or 0,
+            })
+        return dict(dictator_offers=dictator_offers)
+
 
 page_sequence = [
-    Comprension1,
-    Comprension2,
-    Feedback1,
-    Feedback2,
-    InstruccionesGenerales2,
-    InstruccionesGenerales3,
+    #InstruccionesGenerales1,
+    #InstruccionesGenerales2,
+    #Comprension1,
+    #Comprension2,
+    #Feedback1,
+    #Feedback2,
     UserInfo,
     #PreguntaM,
     Intro,
-    RoundN,  # Rondas 1-14: IAT
-    IATAssessmentPage,  # Ronda 15: Evaluación del IAT
-    MoralDecisionPageCerteza,  # Ronda 15: Decisión
-    # Results,                   # Por ahora, no queremos mostrar los resultados del IAT. En caso de querer hacer esto e
-    # en caso de querer hacerlo, falta manejar los assement de acuerdo con la aleatorización del IAT.
+    RoundN,  # Rondas 1-14: iat.
+    IATAssessmentPage,  # Ronda 15: Evaluación del iat
+    MoralDecisionPageCerteza,
+    MoralDecisionPageCerteza2,
+    # Ronda 15: Decisión
+    # Results,                   # Por ahora, no queremos mostrar los resultados del iat. En caso de querer hacer esto e
+    # en caso de querer hacerlo, falta manejar los assement de acuerdo con la aleatorización del iat.
     DictatorIntroduction,  # Rondas 16-18: Introducción al Dictador
-    DictatorOffer,  # Rondas 16-18: Oferta del Dictador,    # Rondas 16-18: Espera de Resultados del Dictador
+    DictatorOffer,
+    DictatorOffer2, # Rondas 16-18: Oferta del Dictador,    # Rondas 16-18: Espera de Resultados del Dictador
     ResultsDictador,  # Rondas 16-18: Resultados del Dictador,            # Ronda 18: Resultados Finales del Dictador
+    ResultsDictator2,
 ]
+
 
 

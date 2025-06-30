@@ -56,19 +56,19 @@ Date:   Tue Mar 18 23:17:24 2025 -0600
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Tue Mar 18 23:11:13 2025 -0600
 
-    reparé un buen en la barra de "¿cuál es el rango moralmente aceptable de tu IAT?".
+    reparé un buen en la barra de "¿cuál es el rango moralmente aceptable de tu iat?".
 
 [33mcommit b1a3b2ae8d9f1561a8a94d5c507c17d26e520ff8[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Tue Mar 18 23:07:36 2025 -0600
 
-    reparé un buen en la barra de "¿cuál es el rango moralmente aceptable de tu IAT?".
+    reparé un buen en la barra de "¿cuál es el rango moralmente aceptable de tu iat?".
 
 [33mcommit 211e497e9b22f85649f593f9952b4aedcbcb2437[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Tue Mar 18 22:57:35 2025 -0600
 
-    reparé un buen en la barra de "¿cuál es el rango moralmente aceptable de tu IAT?"
+    reparé un buen en la barra de "¿cuál es el rango moralmente aceptable de tu iat?"
 
 [33mcommit 2c1d5d605505c764080e99f2fc9cabdf01016527[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
@@ -122,25 +122,25 @@ Date:   Sun Mar 2 18:09:18 2025 -0600
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Sat Mar 1 15:09:46 2025 -0600
 
-    tercer intento para cambiar la visulización para el IAT en celular.
+    tercer intento para cambiar la visulización para el iat en celular.
 
 [33mcommit f4d39e7f2c01488bfc5c1fa396825b1ed735842f[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Sat Mar 1 14:57:40 2025 -0600
 
-    Segundo intento para cambiar la visulización para el IAT en celular.
+    Segundo intento para cambiar la visulización para el iat en celular.
 
 [33mcommit 1e3bd31aa169201416f9ecafa9f7bad3fc7f1c5c[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Sat Mar 1 14:48:49 2025 -0600
 
-    Cambié la visulización para el IAT en celular
+    Cambié la visulización para el iat en celular
 
 [33mcommit fee4acde643b23c70f7eba45dc5a233c15209ecf[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
 Date:   Thu Feb 27 18:33:38 2025 -0600
 
-    IAT prosocial ignorance._cambios. Programa funcional con barra de límite inferior y superior.
+    iat prosocial ignorance._cambios. Programa funcional con barra de límite inferior y superior.
 
 [33mcommit 090c0b70dea9805b10da47d27d5a0dcb642beac8[m
 Author: DonovanDiazcide <donobyron20@gmail.com>
@@ -164,13 +164,13 @@ Date:   Sat Feb 15 22:22:00 2025 -0600
 Author: DonovanDiazcide <TuEmail>
 Date:   Fri Feb 14 14:14:06 2025 -0600
 
-    IAT prosocial ignorance._cambios. Programa funcional con barra de límite inferior y superior.
+    iat prosocial ignorance._cambios. Programa funcional con barra de límite inferior y superior.
 
 [33mcommit 30a5cafa736574dff35ffa8883aaca1ae991cd8d[m
 Author: TuNombre <TuEmail>
 Date:   Thu Jan 30 13:08:37 2025 -0600
 
-    IAT prosocial ignorance._cambios
+    iat prosocial ignorance._cambios
 
 [33mcommit feb59b30eaf97f853b815cc3eb20432cb2c2e045[m
 Merge: 0730a5a ad1f9c8
@@ -189,13 +189,13 @@ Date:   Thu Jan 30 12:54:12 2025 -0600
 Author: TuNombre <TuEmail>
 Date:   Thu Jan 30 12:48:00 2025 -0600
 
-    IAT prosocial ignorance.
+    iat prosocial ignorance.
 
 [33mcommit ad1f9c86f974ac8c246d522b4ba651d40a84e1d2[m
 Author: TuNombre <TuEmail>
 Date:   Mon Jan 20 12:23:09 2025 -0600
 
-    Crée la página de html del dictador, agregué una página introductoria para el IAT2.
+    Crée la página de html del dictador, agregué una página introductoria para el iat2.
 
 [33mcommit a9f49c641b7e82945dc04e4bfb0efbad10887b7a[m
 Author: TuNombre <TuEmail>
@@ -220,7 +220,7 @@ Date:   Fri Jan 17 17:25:08 2025 -0600
 Author: TuNombre <TuEmail>
 Date:   Fri Jan 17 17:18:25 2025 -0600
 
-    Agregué un nuevo IAT, para blanco y negro. actualmente se utiliza el mismo stimuli de gato y perro, pero eso se puede cambiar cuando toque pensar mejor en esto.
+    Agregué un nuevo iat, para blanco y negro. actualmente se utiliza el mismo stimuli de gato y perro, pero eso se puede cambiar cuando toque pensar mejor en esto.
 
 [33mcommit 5c9d5508cd361eb165ca3c854188db518a28c73b[m
 Author: DonovanDiazcide <donovanm.diamz@gmail.com>
@@ -268,7 +268,7 @@ Date:   Sun Dec 29 09:17:41 2024 -0600
 Author: TuNombre <TuEmail>
 Date:   Tue Dec 24 13:55:09 2024 -0600
 
-    Poryecto del IAT modificado. Recupera la información personal del usuario y la guarda en la base de datos.
+    Poryecto del iat modificado. Recupera la información personal del usuario y la guarda en la base de datos.
 
 [33mcommit ab10df87cc197b0b51f7b954f4d111dd062000dc[m
 Merge: b7b881e 5d371fa
@@ -281,13 +281,13 @@ Date:   Tue Dec 24 12:11:18 2024 -0600
 Author: TuNombre <TuEmail>
 Date:   Tue Dec 24 12:10:44 2024 -0600
 
-    Poryecto del IAT modificado. Recupera la información personal del usuario y la guarda en la base de datos.
+    Poryecto del iat modificado. Recupera la información personal del usuario y la guarda en la base de datos.
 
 [33mcommit 7ccd1a6a51da8633cc360d7a4448c1c0b7620e2c[m
 Author: TuNombre <TuEmail>
 Date:   Tue Dec 24 12:09:52 2024 -0600
 
-    Poryecto del IAT modificado. Recupera la información personal del usuario y la guarda en la base de datos.
+    Poryecto del iat modificado. Recupera la información personal del usuario y la guarda en la base de datos.
 
 [33mcommit 5d371fa631364ef30b13efd12bf8399dd1f4e813[m
 Author: DonovanDiazcide <donovanm.diamz@gmail.com>
@@ -295,7 +295,7 @@ Date:   Tue Dec 24 12:06:46 2024 -0600
 
     Update README.md
     
-    cambios para solo mostrar la información del IAT
+    cambios para solo mostrar la información del iat
 
 [33mcommit cd95ce2026caeb0f3de1e2150506866947253fe6[m
 Author: QwiglyDee <qwiglydee@gmail.com>

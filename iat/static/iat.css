@@ -88,7 +88,7 @@ img.stimulus {
     text-align: center;
 }
 
-/* Media Query para dispositivos móviles (ancho < 600px) */
+/* Media Query para disbuenos móviles (ancho < 600px) */
 @media (max-width: 600px) {
     /* Opcional: apilar las esquinas en columna
        .corners-container { flex-direction: column; }

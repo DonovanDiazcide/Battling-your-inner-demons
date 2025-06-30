@@ -1,10 +1,15 @@
 {% block title %}
-    Etapa 5: Qué información revelar en las desiciones de la etapa 6
+    Etapa 5: Qué información revelar en las decisiones de la etapa 6
 {% endblock %}
 
 {% block styles %}
     <link href="{% static 'iat.css' %}" rel="stylesheet"/>
     <style>
+        /* Override para los labels que acompañan a un input radio */
+input[type="radio"] + label {
+    font-weight: normal;
+}
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -86,28 +91,35 @@
 {% endblock %}
 
 {{ block content }}
-
    <!-- Recuadro para recordar los límites definidos -->
     <div class="info-box">
-        <p><strong>Recordatorio de tu rango moralmente aceptable definido en la etapa 4:</strong></p>
-        <p><strong>IAT Personas obesas / personas delgadas: rango aceptable</strong> {{ iat1_lower_limit }} a {{ iat1_upper_limit }}</p>
-        <p><strong>IAT Personas homosexuales y heterosexuales: rango aceptable es de</strong> {{ iat2_lower_limit }} a {{ iat2_upper_limit }}</p>
+        <p><strong>Recordatorio de tus respuestas en la Etapa 4:</strong></p>
+        <p><strong>Prueba de asociación implícita Personas obesas / Personas delgadas: rango aceptable</strong> {{ iat1_lower_limit }} a {{ iat1_upper_limit }}</p>
+        <p><strong>Prueba de asociación implícita Personas homosexuales y heterosexuales: rango aceptable es de</strong> {{ iat2_lower_limit }} a {{ iat2_upper_limit }}</p>
     </div>
-
     <!-- Nuevo mensaje agregado -->
     <div class="info-box">
-<p>En esta Etapa 5 tomarás una decisión sobre qué información revelaremos en las decisiones de la Etapa 6—las decisiones con consecuencias monetarias. Decidirás si quieres que, en las decisiones que involucren a las personas mencionadas en las pruebas de la Etapa 2, se revele quiénes son los grupos de personas involucradas en tu decisión.</p>
+        A continuación, copiamos las instrucciones sobre tu decisión en la Etapa 5. Son las mismas instrucciones que ya leíste al principio.
+        <br><br> Vas a tomar una decisión sobre qué información te revelamos en las decisiones que tomas en la Etapa 6—las decisiones con consecuencias monetarias. En la Etapa 6, vas a saber a qué grupos están afectando tus decisiones—por ejemplo, sabes que hay dos grupos A y B y que uno de los grupos es de indígenas y el otro de mestizos. También vas a saber qué decisiones son más positivas para Grupo A, qué decisiones son más positivas para Grupo B, qué decisiones son más negativas para Grupo A, y qué decisiones son más negativas para Grupo B. Recuerda el ejemplo anterior: tienes que decidir una cantidad entre 0 y 100, y el número que decidas es la cantidad de pesos que recibe Grupo A, mientras que Grupo B recibe el resto de los cien pesos.
+    <br><br>
+    <p>En esta quinta etapa tienes que tomar una decisión para cada par de grupos sobre la cual hiciste una prueba en la Etapa 2. Para cada par de grupos, tienes que decidir si prefieres, en caso de que se te presente una decisión que involucre a ese par de grupos:
+- saber cuál es el grupo A y cuál es el grupo B (en nuestro ejemplo, esto involucra  saber si el grupo A son los indígenas y el grupo B son los mestizos, o al revés).
+- no saber cuál es el grupo A y cuál es el grupo B.</p>
+    <p>¿Cómo vas a tomar esta decisión? No es directa la decisión—no te vamos a preguntar simplemente si quieres que se te revele la información sobre cada grupo. En vez de eso, la decisión va a depender de tus puntajes en las pruebas de asociación implícita y en el rango de puntajes aceptables que nos diste en la cuarta etapa. Para los dos grupos de Personas que aparecieron en una de las pruebas, vamos a tomar en cuenta tres rangos en donde pudo haber caído tu puntaje: abajo del rango que consideras aceptable, dentro del rango que consideras aceptable, y arriba del rango que consideras aceptable. Para cada uno de esos rangos, nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes en caso de que tu puntaje de la Prueba de asociación implícita que incluía a ese grupo haya caído en el rango.</p>
+    <p>Para continuar con el ejemplo de los mestizos e indígenas, supón que hiciste una Prueba de asociación implícita con esos grupos, y el puntaje que te damos toma valores buenos si tiendes a asociar a los mestizos más con rasgos buenos que a los indígenas y toma valores malos si tiendes a asociar a los mestizos más con rasgos malos que a los indígenas —tal vez recuerdes que eso significa que los mestizos son el grupo “base” para fines de la comparación. Te preguntaríamos si quieres que, en una decisión que afecte a mestizos e indígenas en la sexta etapa, te revelemos que tu decisión va a afectar a mestizos e indígenas:</p>
+    <ul class="mt-2 mb-2">
+      <li><strong>a)</strong> si el puntaje de tu prueba que involucra a mestizos e indígenas está por debajo del rango que consideraste aceptable en la cuarta etapa,</li>
+      <li><strong>b)</strong> si el puntaje de tu prueba que involucra a indígenas está dentro del rango que consideraste aceptable,</li>
+      <li><strong>c)</strong> si el puntaje de tu prueba que involucra a indígenas está por encima del rango que consideraste aceptable.</li>
+    </ul>
 
-<p>Tu decisión en esta etapa depende de los puntajes obtenidos en las pruebas de asociación implícita y del rango de puntajes aceptables que definiste en la Etapa 4. Se considerarán tres casos: cuando tu puntaje esté debajo del rango aceptable, dentro del rango aceptable o por encima del rango aceptable. Para cada caso, podrás decidir si quieres que se revele la identidad de los grupos.</p>
+    <p>Supón que decides que en uno de los rangos quieres que se te revele que los grupos al que está afectando tu decisión son mestizos e indígenas, y en los otros dos rangos quieres que te digamos que tu decisión va a afectar a grupos de Personas cuya identidad no te vamos a reportar. Entonces vamos ver cuál fue tu puntaje de la prueba y ver en qué rango cayó tu puntaje. Si en la Etapa 6 tomas una decisión que afecta a mestizos indígenas, te vamos a reportar que esa decisión va a afectar a indígenas sólo si tu puntaje cayó en el rango que nos dijiste. En los otros dos rangos te vamos a reportar que esa decisión va a afectar a un grupo de Personas cuya identidad no te vamos a reportar.</p>
+    <p>Por último, con 20% de probabilidad vamos a hacer lo contrario a lo que nos pediste que hiciéramos en esta quinta etapa. Si tu puntaje cayó en un rango en el que querías que no te reportáramos la identidad de los grupos, con 20% de probabilidad te la vamos a reportar. Si tu puntaje cayó en un rango en el que sí querías que te reportáramos la identidad de los grupos, con 20% de probabilidad no te la vamos a reportar. Nota que con 80% de probabilidad sí vamos a hacer lo que nos pediste, por lo que sigue siendo mejor para ti reportarnos lo que realmente quieres que hagamos en cada rango. También nota que de esta manera no vas a poder saber con certeza en qué rango cayó tu puntaje de la Prueba de asociación implícita basado en la información que recibes en la Etapa 6.</p>
 
-<p>En caso de que elijas que se revele la identidad en algún rango, habrá una probabilidad del 20% de que se haga lo contrario.
-
-<p>Recuerda que en la Etapa 6 no podrás saber con certeza en qué rango cayó tu puntaje en las pruebas de asociación implícita. Sin embargo, podrás ajustar tus decisiones basándote en la probabilidad y en la información que consideres más relevante.</p>
-
-<p><strong>A continuación, indica tu preferencia para cada situación:</strong></p>
+</div>
+        <p><strong>A continuación, indica tu preferencia para cada situación:</strong></p>
 </div>
 
-    <p>Nota: si dejas en blanco algún campo, consideraremos que contestaste "sí"</p>
     {{ formfields }}
     {{ next_button }}
 

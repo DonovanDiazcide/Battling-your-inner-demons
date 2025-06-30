@@ -45,7 +45,6 @@
       </div>
       <div class="your-answer">
         <strong>Tu respuesta:</strong>
-        <em>{{ q.your_answer }}</em>
         {% if q.is_correct %}
           — <strong class="text-success">Correcto</strong>
         {% else %}
@@ -53,7 +52,7 @@
         {% endif %}
       </div>
       <div class="correct-answer">
-        <strong>Respuesta correcta:</strong> {{ q.correct_answer }}
+        <strong>Explicación de la respuesta correcta:</strong>
       </div>
       <div class="explanation">
         {{ q.explanation }}
