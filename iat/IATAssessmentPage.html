@@ -5,6 +5,31 @@
 {% block styles %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet"/>
 <style>
+
+.slider-extremos-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 90%;
+    margin: 0 auto;
+    justify-content: center;
+}
+
+.slider-extremo {
+    min-width: 38px;
+    text-align: center;
+    font-size: 1.15em;
+    font-weight: 600;
+    color: #333;
+    opacity: 0.85;
+    user-select: none;
+    letter-spacing: 0.5px;
+}
+.slider {
+    flex: 1;
+    margin: 0 2px;
+}
+
     body {
         font-family: Arial, sans-serif;
         background-color: #f5f5f5;
@@ -396,7 +421,13 @@ box-sizing: border-box;
           pantalla. </p>
           <br>
 
-      <div id="slider_iat1" class="slider"></div>
+      <div class="slider-extremos-container">
+    <span class="slider-extremo">-2</span>
+    <div id="slider_iat1" class="slider"></div>
+    <span class="slider-extremo">2</span>
+</div>
+
+
       <label> Actualmente estás seleccionando:
         <span class="range-display" id="display_iat1_range"></span>
       </label>
@@ -487,7 +518,13 @@ box-sizing: border-box;
           <p>Puedes seleccionar el límite superior e inferior de tu rango de puntuación y asociación mediante esta barra, cuyos límites puedes mover con el mouse, touchpad o
           pantalla. </p>
 
-      <div id="slider_iat2" class="slider"></div>
+      <div class="slider-extremos-container">
+    <span class="slider-extremo">-2</span>
+    <div id="slider_iat2" class="slider"></div>
+    <span class="slider-extremo">2</span>
+</div>
+
+
         <label>
           <br> Actualmente estás seleccionando:
         <span class="range-display" id="display_iat2_range"></span>

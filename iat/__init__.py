@@ -881,36 +881,32 @@ def custom_export(players):
     for p in players:
         if p.round_number not in (3, 4, 6, 7, 10, 11, 13, 14, 15, 16):
             continue
-        participant = p.participant
-        session = p.session
-        subsession = p.subsession
-        group = p.group
-        for z in Trial.filter(player=p):
+        sess = p.session
+        part = p.participant
+        for t in Trial.filter(player=p):
+            rnd = p.round_number
+            pv = part.vars
             yield [
-                session.code,
-                participant.code,
-                subsession.round_number,
-                subsession.primary_left,
-                subsession.primary_right,
-                subsession.secondary_left,
-                subsession.secondary_right,
-                z.iteration,
-                z.timestamp,
-                z.stimulus_cls,
-                z.stimulus_cat,
-                z.stimulus,
-                z.correct,
-                z.response,
-                z.is_correct,
-                z.reaction_time,
-                p.dictator_category,
-                p.dictator_offer,
-                group.kept,
-                group.dictator_category,
-                group.assigned,
-                p.payoff,
+                sess.code,
+                part.code,
+                rnd,
+                t.iteration,
+                t.timestamp,
+                t.stimulus_cls,
+                t.stimulus_cat,
+                t.stimulus,
+                t.correct,
+                t.response,
+                t.is_correct,
+                t.reaction_time,
+                # Leemos de participant.vars:
+                pv.get(f'cat_r{rnd}'),
+                pv.get(f'dictator_offer_r{rnd}'),
+                pv.get(f'kept_r{rnd}'),
+                pv.get(f'assigned_r{rnd}'),
+                pv.get(f'payoff_r{rnd}'),
+                # ... (más campos IAT si los deseas) ...
             ]
-
 
 def play_game(player: Player, message: dict):
     try:
@@ -1876,8 +1872,9 @@ def split_groups(cat_string: str):
 
 
 class DictatorOffer(Page):
-    form_model = 'group'
-    form_fields = ['kept']
+    form_model = 'player'
+    form_fields = ['dictator_offer']
+
 
     @staticmethod
     def is_displayed(player: Player):
@@ -1926,14 +1923,27 @@ class DictatorOffer(Page):
         )
 
     @staticmethod
-    def error_message(player, values):
-        kept = values["kept"]
-        if kept < 0 or kept > Constants.endowment:
+    def error_message(player: Player, values):
+        offer = values.get('dictator_offer')
+        if offer is None:
+            return "Por favor indica cuánto deseas ofrecer."
+        if offer < 0 or offer > Constants.endowment:
             return f"Por favor, ofrece una cantidad entre 0 y {Constants.endowment}."
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
+        # 1) Asignar al grupo y calcular payoff
+        player.group.kept = player.dictator_offer
         set_payoffs(player.group)
+
+        # 2) Volcar TODO a participant.vars
+        rnd = player.round_number
+        pv = player.participant.vars
+        pv[f'dictator_offer_r{rnd}'] = player.dictator_offer
+        pv[f'kept_r{rnd}'] = player.group.kept
+        pv[f'assigned_r{rnd}'] = player.group.assigned
+        pv[f'payoff_r{rnd}'] = player.payoff
+        pv[f'cat_r{rnd}'] = player.group.dictator_category
 
 
 
@@ -1942,8 +1952,8 @@ class DictatorOffer2(Page):
     Página donde el jugador decide cuánto mantener y cuánto asignar a la categoría,
     para quienes tienen el ordering invertido.
     """
-    form_model = 'group'
-    form_fields = ['kept']
+    form_model = 'player'
+    form_fields = ['dictator_offer']
 
     @staticmethod
     def is_displayed(player: Player):
@@ -2019,41 +2029,61 @@ class DictatorOffer2(Page):
         )
 
     @staticmethod
-    def error_message(player, values):
-        kept = values['kept']
-        if kept is None or kept < 0 or kept > Constants.endowment:
+    def error_message(player: Player, values):
+        offer = values.get('dictator_offer')
+        if offer is None:
+            return "Por favor indica cuánto deseas ofrecer."
+        if offer < 0 or offer > Constants.endowment:
             return f"Por favor, ofrece una cantidad entre 0 y {Constants.endowment}."
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
+        player.group.kept = player.dictator_offer
         set_payoffs(player.group)
 
-# pages.py
+        rnd = player.round_number
+        pv = player.participant.vars
+        pv[f'dictator_offer_r{rnd}'] = player.dictator_offer
+        pv[f'kept_r{rnd}'] = player.group.kept
+        pv[f'assigned_r{rnd}'] = player.group.assigned
+        pv[f'payoff_r{rnd}'] = player.payoff
+        pv[f'cat_r{rnd}'] = player.group.dictator_category
+
 
 class ResultsDictador(Page):
     @staticmethod
     def is_displayed(player: Player):
         rotated = list(range(1, 8)) + list(range(8, 15))
         return (
-                player.round_number == 16
-                and player.participant.vars.get("iat_round_order") == rotated
+            player.round_number == 16
+            and player.participant.vars.get("iat_round_order") == rotated
         )
 
     @staticmethod
     def vars_for_template(player: Player):
         dictator_offers = []
+        pv = player.participant.vars
         for rnd in [15, 16]:
-            p = player.in_round(rnd)
-            visible_cat = player.participant.vars.get(f'visible_category_round_{rnd}')
-            original_category = p.group.dictator_category or ""
+            # Recuperamos de participant.vars en lugar de group
+            visible_cat = pv.get(f'visible_category_round_{rnd}')
+            kept       = pv.get(f'kept_r{rnd}')
+            assigned   = pv.get(f'assigned_r{rnd}', 0)
+            full_cat   = pv.get(f'cat_r{rnd}')
             dictator_offers.append({
-                'round': rnd,
-                'category': visible_cat,          # “Miembro del grupo” o etiqueta explícita
-                'full_category': original_category,  # ej. "personas delgadas y personas obesas"
-                'kept': p.group.kept,
-                'assigned': p.group.assigned or 0,
+                'round':         rnd,
+                'category':      visible_cat,
+                'full_category': full_cat,
+                'kept':          kept,
+                'assigned':      assigned,
             })
         return dict(dictator_offers=dictator_offers)
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Sobrescribimos el payoff con el valor guardado por participante
+        payoff16 = player.participant.vars.get('payoff_r16')
+        if payoff16 is not None:
+            player.payoff = payoff16
 
 
 class ResultsDictator2(Page):
@@ -2069,19 +2099,29 @@ class ResultsDictator2(Page):
     @staticmethod
     def vars_for_template(player: Player):
         dictator_offers = []
+        pv = player.participant.vars
         for rnd in [15, 16]:
-            p   = player.in_round(rnd)
-            vis = player.participant.vars.get(f"visible_category_round_{rnd}", {})
-            label    = vis.get("label", "Sin categoría asignada")
-            full_cat = vis.get("full_category", p.group.dictator_category or "")
+            # Para el caso invertido, label y full_category pueden venir empaquetados
+            vis       = pv.get(f'visible_category_round_{rnd}', {})
+            label     = vis.get("label", pv.get(f'cat_r{rnd}'))
+            full_cat  = vis.get("full_category", pv.get(f'cat_r{rnd}'))
+            kept      = pv.get(f'kept_r{rnd}')
+            assigned  = pv.get(f'assigned_r{rnd}', 0)
             dictator_offers.append({
                 'round':         rnd,
                 'category':      label,
                 'full_category': full_cat,
-                'kept':          p.group.kept,
-                'assigned':      p.group.assigned or 0,
+                'kept':          kept,
+                'assigned':      assigned,
             })
         return dict(dictator_offers=dictator_offers)
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Sobrescribimos el payoff con el valor guardado por participante
+        payoff16 = player.participant.vars.get('payoff_r16')
+        if payoff16 is not None:
+            player.payoff = payoff16
 
 
 page_sequence = [
