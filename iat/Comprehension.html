@@ -1,25 +1,103 @@
 {% extends "global/Page.html" %}
 {% load otree %}
 
-{% block title %}
-Cuestionario de comprensión
-{% endblock %}
+{% block title %}Cuestionario de comprensión{% endblock %}
 
 {% block content %}
-<p>
-  Contesta las siguientes preguntas para confirmar que entendiste las reglas.
-  Lee con atención: algunas combinan varios puntos de las instrucciones.
-</p>
-
+<p>Contesta las siguientes preguntas para confirmar que entendiste las reglas.</p>
 <hr>
 
-{% formfield player.comp_q1 %}
-{% formfield player.comp_q2 %}
-{% formfield player.comp_q3 %}
-{% formfield player.comp_q4 %}
-{% formfield player.comp_q5 %}
-{% formfield player.comp_q6 %}
-{% formfield player.comp_q7 %}
+<div class="qblock mb-3">
+  {% formfield player.comp_q1 %}
+</div>
+
+<div class="qblock mb-3">
+  {% formfield player.comp_q2 %}
+</div>
+
+{# PREGUNTA 3: ARRASTRAR ETAPAS #}
+<div class="qblock mb-4">
+  <p><strong>3.&nbsp;Arrastra las etapas para ponerlas en el orden correcto:</strong></p>
+
+  <ul id="sortable-stages" class="list-group mb-2">
+    {% for etapa in etapas_aleatorias %}
+      <li class="list-group-item cursor-move">
+        {{ etapa }}
+      </li>
+    {% endfor %}
+  </ul>
+
+<textarea id="stage_order_input"
+          name="stage_order"
+          hidden>{{ player.field_maybe_none('stage_order') }}</textarea>
+
+  {# mostramos aquí el error, si lo hay #}
+  <div class="otree-error">
+    {{ formfield_errors 'stage_order' }}
+  </div>
+
+  <small class="text-muted">
+    (Arrastra y suelta para reordenar. Continúa cuando termines.)
+  </small>
+</div>
+
+<div class="qblock mb-3">
+  {% formfield player.comp_q4 %}
+</div>
+
+<div class="qblock mb-3">
+  {% formfield player.comp_q5 %}
+</div>
+
+<div class="qblock mb-3">
+  {% formfield player.comp_q6 %}
+</div>
 
 {% next_button %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script>
+  // 1) Toggle de opciones radio
+  document.querySelectorAll('.qblock').forEach(block => {
+    if (block.querySelector('.q-toggle')) return;
+    const checks = block.querySelectorAll('.form-check');
+    if (!checks.length) return;
+    checks.forEach(chk => chk.classList.add('d-none'));
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-primary btn-sm mt-2 q-toggle';
+    btn.textContent = 'Da click para ver los incisos de la pregunta';
+    block.appendChild(btn);
+    btn.addEventListener('click', () => {
+      checks.forEach(chk => chk.classList.remove('d-none'));
+      btn.classList.add('d-none');
+    });
+    checks.forEach(chk => {
+      const radio = chk.querySelector('input[type=radio]');
+      radio.addEventListener('change', () => {
+        checks.forEach(c => c.classList.add('d-none'));
+        btn.textContent = '✓ Respuesta registrada, da clic nuevamente si quieres revisar o cambiar tu respuesta';
+        btn.classList.remove('d-none');
+      });
+    });
+  });
+
+  // 2) Drag & drop SortableJS
+  const list  = document.getElementById('sortable-stages');
+  const input = document.getElementById('stage_order_input');
+  if (list && input) {
+    Sortable.create(list, {
+      animation: 150,
+      onSort: saveOrder,
+    });
+    function saveOrder() {
+      const items = Array.from(list.children)
+                         .map(li => li.textContent.trim());
+      input.value = items.join('\n');
+    }
+    saveOrder();
+  }
+  </script>
 {% endblock %}

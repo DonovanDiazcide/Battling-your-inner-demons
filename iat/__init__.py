@@ -117,43 +117,139 @@ class Constants(BaseConstants):
     PersonasHeterosexuales = "personas heterosexuales"
     PersonasHomosexuales = "personas homosexuales"
 
+    # 1 ·  lista canónica para no repetir
+    STAGES_CORRECT = [
+        "Sociodemográfica",
+        "Pruebas de asociación implícita",
+        "Adivinas tus puntajes en las pruebas de la Etapa 2",
+        "Rango aceptable de puntajes en las pruebas de la Etapa 2",
+        "Qué información revelar en las decisiones de la Etapa 6",
+        "Decisiones monetarias que pueden afectar a grupos de la Etapa 2",
+    ]
+
     CORRECT_ANSWERS = dict(
-        comp_q1='c',
-        comp_q2='d',
-        comp_q3='a',  # tu BooleanField usa True/False
+        comp_q1='e',
+        comp_q2='b',
+        stage_order="\n".join(STAGES_CORRECT),  # tu BooleanField usa True/False
         comp_q4='c',
         comp_q5='d',
         comp_q6='c',
-        comp_q7='a',
     )
 
     QUESTION_TEXT = dict(
         comp_q1=(
-            '1. ¿Cuál de las siguientes opciones describe correctamente las acciones disponibles para un participante una vez que se formó su grupo en el experimento?'),
+            '1. Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?'),
         comp_q2=(
+            '2. ¿Cuáles son las dos características que hace que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?'),
+        stage_order=(
+            "3. Arrastra las etapas para ponerlas en el orden correcto:"
+        ),
+        comp_q4=('4. En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?'),
+        comp_q5=('5. Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?'),
+        comp_q6=('6. ¿Qué es lo que cada participantes debe adivinar sobre los miembros de su grupo en este experimento?'),
+    )
+
+    QUESTION_OPTIONS = dict(
+        comp_q1=[
+            ('a',
+             'a) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('b',
+             'b) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('c',
+             'c) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('d',
+             'd) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '),
+            ('e',
+             'e) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'
+             ),
+            ('f',
+             'f) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '
+             ),
+        ],
+
+        comp_q2=[
+            ('a',
+             'a) Primero, hay una base de datos con cientos de miles de participantes que ya tomaron la prueba. Segundo, fue desarrollado por académicos.'),
+            ('b',
+             'b) Primero, está ligado a comportamientos relevantes en el mundo real. Segundo, es difícil de manipular ya que mide tu respuesta automática, sin que hayas tenido tiempo de pensar. '),
+            ('c', 'c) Primero, no existen otras pruebas para medir sesgos. Segundo, es fácil de implementar.'),
+        ],
+
+        stage_order=[],
+
+        comp_q4=[
+            ('a',
+             'a) Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'),
+            ('b',
+             'b) Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'),
+            ('c',
+             'c) Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable. '),
+        ],
+
+        comp_q5=[
+            ('a', 'a) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D.'),
+            ('b', 'b) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la dentidad de los grupos C y D.'),
+            ('c', 'c) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D. '),
+            ('d',
+             'd) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.'),
+        ],
+        comp_q6=[
+            ('a',
+             'a) Ninguna decisión involucra a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('b',
+             'b) No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('c',
+             'c) Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2. '),
+        ],
+    )
+
+    CORRECT_EXPLANATIONS = dict(
+        comp_q1='Tu puntaje se compara con los datos de Project Implicit, una base con cientos de miles de participantes. Una puntuación de cero representa el promedio de dicha base. La interpretación del puntaje depende de cuál de los dos grupos es el grupo "base" para fines de la comparación. En la pregunta, el grupo B es el grupo "base". Un puntaje positivo indicaría que, comparado a la base de datos de Project Implicit, el/la participante asocia con mayor facilidad a los del grupo B con los atributos positivos en comparación la asociación que hace con los del grupo A. Un puntaje negativo indica una asociación relativamente más fuerte de los del grupo A con atributos positivos en comparación con la asociación con los del grupo B. ',
+        comp_q2='Como mostramos con los estudios que mencionamos, hay mucha evidencia que la Prueba de Asociación Implícita está ligada a comportamientos relevantes en el mundo real. A diferencia de otras pruebas, la Prueba de Asociación Implícita es difícil de manipular ya que mide tu respuesta automática---tu primera reacción, sin haber tenido tiempo para pensar. Sí existen otras pruebas para medir sesgos que tienen muchos participantes que ya tomaron la prueba, que fueron desarrollados por académicos, pero la Prueba de Asociación Implícita destaca por las dos razones que mencionamos. ',
+        stage_order=(
+                "El orden correcto es:\n• " + "\n• ".join(STAGES_CORRECT)
+        ),
+        comp_q4='No es directa la decisión sobre la información que se te revela—no te vamos a preguntar simplemente si quieres que se te revele la información sobre cada grupo. En vez de eso, la decisión va a depender de tus puntajes en las pruebas de asociación implícita y en el rango de puntajes aceptables que nos diste en la cuarta etapa. Para los dos grupos de personas que aparecieron en una de las pruebas, vamos a tomar en cuenta tres rangos en donde pudo haber caído tu puntaje: abajo del rango que consideras aceptable, dentro del rango que consideras aceptable, y arriba del rango que consideras aceptable. Para cada rango, nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a la decisión en caso de que tu puntaje de la prueba de asociación que incluía a ese grupo haya caído dentro de ese rango.',
+        comp_q5='Recuerda que con 20% de probabilidad vamos a hacer lo contrario a lo que nos pediste que hiciéramos en esta quinta etapa. Si tu puntaje cayó en un rango en el que querías que no te reportáramos la identidad de los grupos, con 20% de probabilidad te la vamos a reportar. Si tu puntaje cayó en un rango en el que sí querías que te reportáramos la identidad de los grupos, con 20% de probabilidad no te la vamos a reportar. Nota que con 80% de probabilidad sí vamos a hacer lo que nos pediste, por lo que sigue siendo mejor para ti reportarnos lo que realmente quieres que hagamos en cada rango. También nota que de esta manera no vas a poder saber con certeza en qué rango cayó tu puntaje de la Prueba de Asociación Implícita basado en la información que recibes en la Etapa 6.',
+        comp_q6='Los participantes deben adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
+    )
+
+    #cuestionarios de comprensión para el segundo grupo.
+
+    CORRECT_ANSWERS2 = dict(
+        comp_q1_2='c',
+        comp_q2_2='d',
+        comp_q3_2='a',  # tu BooleanField usa True/False
+        comp_q4_2='c',
+        comp_q5_2='d',
+        comp_q6_2='c',
+    )
+
+    QUESTION_TEXT2 = dict(
+        comp_q1_2=(
+            '1. ¿Cuál de las siguientes opciones describe correctamente las acciones disponibles para un participante una vez que se formó su grupo en el experimento?'),
+        comp_q2_2=(
             '2. ¿Qué sucede si un participante decide pagar el costo (5 pesos) para darle o quitarle 20 pesos a los demás miembros de su grupo, y el participante decide quitarle 20 pesos a uno de ellos?'),
-        comp_q3=('3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
+        comp_q3_2=('3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
                  '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
                  '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
                  '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
                  '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
                  '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
                  ),
-        comp_q4=('4. Caclula la cantidad de dinero con la que termina el siguiente participante: <br>'
+        comp_q4_2=('4. Caclula la cantidad de dinero con la que termina el siguiente participante: <br>'
                  '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
                  '  • Expresa la opinión alterna a su opinión privada.<br>'
                  '  • Los otros miembros no pagan el costo para decidir dar o quitar 20 pesos.<br>'
                  '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
                  '  • Advina correctamente si la opinión que le expresaron los demás miembros es igual a su opinión privada, y recibe 10 pesos adicionales.<br>'),
-        comp_q5=('¿Cómo se crean los grupos de tres personas en el experimento?'),
-        comp_q6=(
+        comp_q5_2=('¿Cómo se crean los grupos de tres personas en el experimento?'),
+        comp_q6_2=(
             '6. ¿Qué es lo que cada participantes debe adivinar sobre los miembros de su grupo en este experimento?'),
-        comp_q7=(
-            '7. (Verdadero o Falso) Los participantes no sabrán quiénes son los demás miembros de cada grupo en los que estén.'),
-    )
+        )
 
-    QUESTION_OPTIONS = dict(
-        comp_q1=[
+    QUESTION_OPTIONS2 = dict(
+        comp_q1_2=[
             ('a',
              'a) Escoger qué opinión expresarle a los demás en el grupo. Decidir si dar o quitar dinero a cada uno de los miembros. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
             ('b',
@@ -163,32 +259,32 @@ class Constants(BaseConstants):
             ('d',
              'd) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
         ],
-        comp_q2=[
+        comp_q2_2=[
             ('a', 'a) El participante gana 20 pesos'),
             ('b', 'b) El participante recupera los 5 pesos pagados y el otro miembro gana 20 pesos adicionales'),
             ('c', 'c) Sólo el que paga pierde dinero; el otro miembro no gana ni pierde nada'),
             ('d', 'd) El participante pierde 5 pesos y el otro miembro pierde 20 pesos'),
         ],
-        comp_q3=[
+        comp_q3_2=[
             ('a', 'a) Termina con 25 pesos'),
             ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
             ('c', 'c) Termina con 30 pesos'),
             ('d', 'd) Termina con 45 pesos'),
         ],
-        comp_q4=[
+        comp_q4_2=[
             ('a', 'a) Termina con 40 pesos'),
             ('b', 'b) Termina con 15 pesos'),
             ('c', 'c) Termina con 65 pesos'),
             ('d', 'd) Termina con 50 pesos'),
         ],
-        comp_q5=[
+        comp_q5_2=[
             ('a', 'a) Según sus características personales (por ejemplo, edad o género)'),
             ('b', 'b) Los participantes eligen libremente a los mimebros de su grupo'),
             ('c', 'c) De forma totalmente aleatoria'),
             ('d',
              'd) Basándose en las opiniones privadas de los participantes sobre cada uno de los temas de la Parte 3 del experimento'),
         ],
-        comp_q6=[
+        comp_q6_2=[
             ('a', 'a) Si la opinión que los demás miembros le expresaron es la misma que expresaron en privado'),
             ('b',
              'b) La decisión que tomará cada uno de los mimebros sobre dar o quitar 20 pesos a los demás y si la opinión que los demás miembros le expresaron es la misma que expresaron en privado'),
@@ -196,23 +292,17 @@ class Constants(BaseConstants):
              'c) Si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
             ('d', 'd) Si la opinión que los demás miembros le expresaron es diferente a su opinión privada'),
         ],
-        comp_q7=[
-            ('a',
-             'a) Verdadero: los participantes no sabrán quiénes son los demás miembros de cada grupo en los que estén.'),
-            ('b',
-             'b) Falso: los participantes sí sabrán quiénes son los demás miembros de cada grupo en los que estén.'),
-        ],
     )
 
-    CORRECT_EXPLANATIONS = dict(
-        comp_q1='Las acciones disponibles para un participante una vez que se formó su grupo son: (1) escoger qué opinión expresarle a los demás en el grupo, (2) para quienes pagaron el costo por hacerlo decidir si dar o quitar dinero a cada uno de los miembros, (3) adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado, y (4) adivinar el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
-        comp_q2='Los participantes que pagan el costo por decidir dar o quitar 20 pesos a los demás miembros de su grupo se les sustrae 5 pesos de su dinero disponible. Si los participantes deciden quitarle 20 pesos a uno de los miembros, esa decisión se aplicará al miembro; pierde 20 pesos.',
-        comp_q3='El participante recibe 50 pesos por participar, pierde 5, gana 10, pierde 40 y gana 10. Entonces, termina con 50 - 5 + 10 - 40 + 10 = 25 pesos.',
-        comp_q4='El participante recibe 50 pesos por participar, pierde 5, gana 10 y gana 10. Entonces, termina con 50 - 5 + 10 + 10 = 65 pesos.',
-        comp_q5='Los grupos de tres personas se forman a partir de las opiniones privadas de los participantes sobre cada uno de los temas de la Parte 3 del experimento.',
-        comp_q6='Los participantes deben adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
-        comp_q7='Verdadero: los participantes no sabrán quiénes son los demás miembros de cada grupo en los que estén.',
+    CORRECT_EXPLANATIONS2 = dict(
+        comp_q1_2='Las acciones disponibles para un participante una vez que se formó su grupo son: (1) escoger qué opinión expresarle a los demás en el grupo, (2) para quienes pagaron el costo por hacerlo decidir si dar o quitar dinero a cada uno de los miembros, (3) adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado, y (4) adivinar el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
+        comp_q2_2='Los participantes que pagan el costo por decidir dar o quitar 20 pesos a los demás miembros de su grupo se les sustrae 5 pesos de su dinero disponible. Si los participantes deciden quitarle 20 pesos a uno de los miembros, esa decisión se aplicará al miembro; pierde 20 pesos.',
+        comp_q3_2='El participante recibe 50 pesos por participar, pierde 5, gana 10, pierde 40 y gana 10. Entonces, termina con 50 - 5 + 10 - 40 + 10 = 25 pesos.',
+        comp_q4_2='El participante recibe 50 pesos por participar, pierde 5, gana 10 y gana 10. Entonces, termina con 50 - 5 + 10 + 10 = 65 pesos.',
+        comp_q5_2='Los grupos de tres personas se forman a partir de las opiniones privadas de los participantes sobre cada uno de los temas de la Parte 3 del experimento.',
+        comp_q6_2='Los participantes deben adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
     )
+
 
 
 def url_for_image(filename):
@@ -380,35 +470,47 @@ class Player(BasePlayer):
     dscore1 = models.FloatField()  # D-score del primer iat
     dscore2 = models.FloatField()  # D-score del segundo iat
 
-    # ─── Cuestionario de comprensión ────────────────────────────────────
+    # ─── Cuestionario de comprensión 1────────────────────────────────────
     comp_q1 = models.StringField(
         label=(
-            '1. ¿Cuál de las siguientes opciones describe correctamente las acciones disponibles para un participante una vez que se formó su grupo en el experimento?'
+            '1. ¿Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?'
         ),
         choices=[
             ('a',
-             'a) Escoger qué opinión expresarle a los demás en el grupo. Decidir si dar o quitar dinero a cada uno de los miembros. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+             'a) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
             ('b',
-             'b) Escoger qué opinión expresarle a los demás en el grupo. Adivinar si la opinión que los demás mimebros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+             'b) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
             ('c',
-             'c) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+             'c) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
             ('d',
-             'd) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.')
+             'd) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '),
+            ('e',
+             'e) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'
+             ),
+            ('f',
+             'f) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '
+             ),
         ],
+        widget=widgets.RadioSelect,
         blank=False,
     )
 
     comp_q2 = models.StringField(
         label=(
-            '2. ¿Qué sucede si un participante decide pagar el costo (5 pesos) para darle o quitarle 20 pesos a los demás miembros de su grupo, y el participante decide quitarle 20 pesos a uno de ellos?'
+            '2. ¿Cuáles son las dos características que hace que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?'
         ),
         choices=[
-            ('a', 'a) El participante gana 20 pesos'),
-            ('b', 'b) El participante recupera los 5 pesos pagados y el otro miembro gana 20 pesos adicionales'),
-            ('c', 'c) Sólo el que paga pierde dinero; el otro miembro no gana ni pierde nada'),
-            ('d', 'd) El participante pierde 5 pesos y el otro miembro pierde 20 pesos')
+            ('a', 'a) Primero, hay una base de datos con cientos de miles de participantes que ya tomaron la prueba. Segundo, fue desarrollado por académicos.'),
+            ('b', 'b) Primero, está ligado a comportamientos relevantes en el mundo real. Segundo, es difícil de manipular ya que mide tu respuesta automática, sin que hayas tenido tiempo de pensar. '),
+            ('c', 'c) Primero, no existen otras pruebas para medir sesgos. Segundo, es fácil de implementar.'),
         ],
+        widget=widgets.RadioSelect,
         blank=False,
+    )
+
+    stage_order = models.LongStringField(
+        blank=True,
+        label="Arrastra las etapas para ponerlas en el orden correcto:"
     )
 
     comp_q3 = models.StringField(
@@ -426,9 +528,100 @@ class Player(BasePlayer):
             ('c', 'c) Termina con 30 pesos'),
             ('d', 'd) Termina con 45 pesos')
         ],
+        widget=widgets.RadioSelect,
     )
 
     comp_q4 = models.StringField(
+        label=(
+            '4. ¿En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?'
+        ),
+        choices=[
+            ('a', 'a) Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'),
+            ('b', 'b) Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'),
+            ('c', 'c) Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable. '),
+            ],
+        widget=widgets.RadioSelect,
+        blank=False,
+    )
+
+    comp_q5 = models.StringField(
+        label=(
+            '5. Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?'
+        ),
+        choices=[
+            ('a', 'a) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D.'),
+            ('b', 'b) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la dentidad de los grupos C y D.'),
+            ('c', 'c) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D. '),
+            ('d', 'd) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.'),
+        ],
+        widget=widgets.RadioSelect,
+        blank=False,
+    )
+
+    comp_q6 = models.StringField(
+        label=(
+            '6. Escoge la opción correcta sobre tus decisiones en la Etapa 6.'
+        ),
+        choices=[
+            ('a', 'a) Ninguna decisión involucra a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('b',
+             'b) No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('c',
+             'c) Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2. '),
+        ],
+        widget=widgets.RadioSelect,
+        blank=False,
+    )
+
+    # ─── Cuestionario de comprensión 2────────────────────────────────────
+    comp_q1_2 = models.StringField(
+        label=(
+            '1. ¿dssadas de las siguientes opciones describe correctamente las acciones disponibles para un participante una vez que se formó su grupo en el experimento?'
+        ),
+        choices=[
+            ('a',
+             'a) Escoger qué opinión expresarle a los demás en el grupo. Decidir si dar o quitar dinero a cada uno de los miembros. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('b',
+             'b) Escoger qué opinión expresarle a los demás en el grupo. Adivinar si la opinión que los demás mimebros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('c',
+             'c) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('d',
+             'd) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.')
+        ],
+        blank=False,
+    )
+
+    comp_q2_2 = models.StringField(
+        label=(
+            '2. ¿Qué sucede si un participante decide pagar el costo (5 pesos) para darle o quitarle 20 pesos a los demás miembros de su grupo, y el participante decide quitarle 20 pesos a uno de ellos?'
+        ),
+        choices=[
+            ('a', 'a) El participante gana 20 pesos'),
+            ('b', 'b) El participante recupera los 5 pesos pagados y el otro miembro gana 20 pesos adicionales'),
+            ('c', 'c) Sólo el que paga pierde dinero; el otro miembro no gana ni pierde nada'),
+            ('d', 'd) El participante pierde 5 pesos y el otro miembro pierde 20 pesos')
+        ],
+        blank=False,
+    )
+
+    comp_q3_2 = models.StringField(
+        label=(
+            '3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
+            '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+            '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
+            '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
+            '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+            '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
+        ),
+        choices=[
+            ('a', 'a) Termina con 25 pesos'),
+            ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
+            ('c', 'c) Termina con 30 pesos'),
+            ('d', 'd) Termina con 45 pesos')
+        ],
+    )
+
+    comp_q4_2 = models.StringField(
         label=(
             '4. Caclula la cantidad de dinero con la que termina el siguiente participante: <br>'
             '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
@@ -446,7 +639,7 @@ class Player(BasePlayer):
         blank=False,
     )
 
-    comp_q5 = models.StringField(
+    comp_q5_2 = models.StringField(
         label=(
             '¿Cómo se crean los grupos de tres personas en el experimento?'
         ),
@@ -460,7 +653,7 @@ class Player(BasePlayer):
         blank=False,
     )
 
-    comp_q6 = models.StringField(
+    comp_q6_2 = models.StringField(
         label=(
             '6. ¿Qué es lo que cada participantes debe adivinar sobre los miembros de su grupo en este experimento?'
         ),
@@ -475,7 +668,7 @@ class Player(BasePlayer):
         blank=False,
     )
 
-    comp_q7 = models.StringField(
+    comp_q7_2 = models.StringField(
         label=(
             '7. (Verdadero o Falso) Los participantes no sabrán quiénes son los demás miembros de cada grupo en los que estén.'
         ),
@@ -487,6 +680,7 @@ class Player(BasePlayer):
         ],
         blank=False,
     )
+
 
     iat1_self_assessment = models.StringField(
         label="¿Cómo crees que te fue en el IAT de Personas obesas y Personas delgadas?",
@@ -1317,34 +1511,76 @@ class PreguntaM(Page):
 
 #### espacio para la página del cuestionario :
 
+from collections import OrderedDict
+
 class Comprehension(Page):
     form_model = 'player'
-    form_fields = list(Constants.CORRECT_ANSWERS.keys())
+    form_fields = [
+        'comp_q1',
+        'comp_q2',
+        'stage_order',   # <-- aquí lo incluimos
+        'comp_q4',
+        'comp_q5',
+        'comp_q6',
+    ]
 
     @staticmethod
     def before_next_page(player, timeout_happened):
         res, score = {}, 0
-        for f in Constants.CORRECT_ANSWERS:
-            given   = getattr(player, f)
+        for f in Comprehension.form_fields:
+            given = getattr(player, f)
             correct = Constants.CORRECT_ANSWERS[f]
-            ok      = given == correct
-            res[f] = dict(
-            text    = Constants.QUESTION_TEXT[f],  # enunciado completo (HTML)
-            given   = str(given),          # lo que marcó el participante
-            correct = str(correct),        # clave correcta
-            ok      = ok,                  # booleano
-)
 
+            # ---------- determinar si acertó ----------
+            if f == 'stage_order':
+                given_list = [s.strip() for s in (given or '').splitlines() if s.strip()]
+                correct_list = [s.strip() for s in correct.splitlines()]
+                ok = (given_list == correct_list)
+            else:
+                ok = (given == correct)
+
+            # ---------- label legible que el usuario marcó ----------
+            if f == 'stage_order':
+                given_label = " → ".join(given_list) if given else "(vacío)"
+            else:
+                # convierte QUESTION_OPTIONS en dict {valor: texto}
+                opts_dict = OrderedDict(Constants.QUESTION_OPTIONS[f])
+                given_label = opts_dict.get(given, "(sin marcar)")
+
+            res[f] = dict(
+                text=Constants.QUESTION_TEXT[f],
+                given=given,  # letra o texto crudo
+                given_label=given_label,  # texto legible
+                correct=correct,
+                ok=ok,
+                options=Constants.QUESTION_OPTIONS.get(f, []),
+                explanation=Constants.CORRECT_EXPLANATIONS[f],
+            )
             score += ok
-        # SOLO datos primitivos → siempre json-/pickle-safe
+
         player.participant.vars.update(comp_results=res, comp_score=score)
+        player.participant.vars['compr1_shown'] = True
+
 
     @staticmethod
-    def is_displayed(player: Player):
+    def is_displayed(player):
         return (
-                player.participant.vars.get('iat_round_order') == list(range(1, 15))
-                and not player.participant.vars.get('compr1_shown', False)
+            player.participant.vars.get('iat_round_order') == list(range(1, 15))
+            and not player.participant.vars.get('compr1_shown', False)
         )
+
+    @staticmethod
+    def vars_for_template(player):
+        etapas = [
+            "Sociodemográfica",
+            "Pruebas de asociación implícita",
+            "Adivinas tus puntajes en las pruebas de la Etapa 2",
+            "Rango aceptable de puntajes en las pruebas de la Etapa 2",
+            "Qué información revelar en las decisiones de la Etapa 6",
+            "Decisiones monetarias que pueden afectar a grupos de la Etapa 2",
+        ]
+        random.shuffle(etapas)
+        return dict(etapas_aleatorias=etapas)
 
 class ComprehensionFeedback(Page):
     @staticmethod
@@ -1356,6 +1592,7 @@ class ComprehensionFeedback(Page):
             info['options']     = Constants.QUESTION_OPTIONS[fname]
             info['explanation'] = Constants.CORRECT_EXPLANATIONS[fname]
 
+        player.participant.vars['feedback1_shown'] = True
         return dict(
             results=results,
             score=score,
@@ -1368,6 +1605,71 @@ class ComprehensionFeedback(Page):
                 player.participant.vars.get('iat_round_order', []) == list(range(1, 15))
                 and not player.participant.vars.get('feedback1_shown', False)
         )
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        player.participant.vars['feedback1_shown'] = True
+
+class Comprehension2(Page):
+    form_model = 'player'
+    form_fields = list(Constants.CORRECT_ANSWERS2.keys())
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        res, score = {}, 0
+        for f in Constants.CORRECT_ANSWERS2:
+            given   = getattr(player, f)
+            correct = Constants.CORRECT_ANSWERS2[f]
+            ok      = given == correct
+            res[f] = dict(
+            text    = Constants.QUESTION_TEXT2[f],  # enunciado completo (HTML)
+            given   = str(given),          # lo que marcó el participante
+            correct = str(correct),        # clave correcta
+            ok      = ok,                  # booleano
+)
+            score += ok
+        # SOLO datos primitivos → siempre json-/pickle-safe
+        player.participant.vars.update(comp_results=res, comp_score=score)
+        player.participant.vars['compr2_shown'] = True
+
+
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            player.participant.vars.get('iat_round_order')
+                == (list(range(8, 15)) + list(range(1, 8)))
+            and not player.participant.vars.get('compr2_shown', False)
+        )
+
+
+class ComprehensionFeedback2(Page):
+    @staticmethod
+    def vars_for_template(player):
+        results = player.participant.vars['comp_results']
+        score   = player.participant.vars['comp_score']
+
+        for fname, info in results.items():
+            info['options']     = Constants.QUESTION_OPTIONS2[fname]
+            info['explanation'] = Constants.CORRECT_EXPLANATIONS2[fname]
+
+        return dict(
+            results=results,
+            score=score,
+            total=len(Constants.CORRECT_ANSWERS2),
+        )
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+                player.participant.vars.get('iat_round_order', [])
+                == (list(range(8, 15)) + list(range(1, 8)))
+                and not player.participant.vars.get('feedback2_shown', False)
+        )
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        player.participant.vars['feedback2_shown'] = True
 
 class InstruccionesGenerales1(Page):
     @staticmethod
@@ -2105,6 +2407,8 @@ page_sequence = [
     #Feedback2,
     Comprehension,
     ComprehensionFeedback,
+    Comprehension2,
+    ComprehensionFeedback2,
     UserInfo,
     #PreguntaM,
     Intro,
