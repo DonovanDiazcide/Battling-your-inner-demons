@@ -21,8 +21,13 @@ Configurable parameters (in session config):
 0. download/unzip content of this repo into some working directory, or clone it using git 
    ```bash
    git clone https://github.com/DonovanDiazcide/otree_IAT_lics_prosocial_ih.git
-   cd iat_LICS
-   cd otree-experiments
+   cd otree_IAT_lics_prosocial_ih
+   ```
+0.1 Change to ramaPiloto1
+
+   ```bash
+   git fetch --all
+   git checkout -b dev origin/ramaPiloto1
    ```
 1. create and activate virtualenv in working directory
    ```bash
