@@ -39,6 +39,9 @@ Configurable parameters (in session config):
    cd..
    pip install --upgrade pip
    ```
+acá, después de correr pip install --upgrade pip, te puede aparecer un mensaje en rojo como "ERROR: To modify pip, please run the following command:
+C:\Users\donob\Documents\compartirJM\otree_IAT_lics_prosocial_ih\.venv\Scripts\python.exe -m pip install --upgrade pip", corre ese comando que te indica la terminal.
+   
 2. install requirements
    ```bash
    pip install -r requirements.txt
@@ -48,7 +51,16 @@ Configurable parameters (in session config):
    ```bash
    otree devserver
    ```
+3.1 borrar sqlite: 
+   te puede aparecer algo como: oTree has been updated. Please delete your database (db.sqlite3), corre lo siguiente: 
+   ```bash
+   del db.sqlite3
+   ```
 4. open browser at `http://localhost:8000/`
+5. IAT ORDER SUMMARY.
+hasta ahora solamente los jugadores con el orden [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] tienen el programa actualizado, entonces métete al link de alguno de esos jugadores, si es el jugador 3, entonces métete al tercer link. 
+   
+
 
 ## PyCharm
 
