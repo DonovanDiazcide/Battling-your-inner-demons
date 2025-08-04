@@ -22,7 +22,9 @@ SESSION_CONFIGS = [
 # e.g. self.session.config['participation_fee']
 
 SESSION_CONFIG_DEFAULTS = dict(
-    real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
+    # cada punto vale 0 unidades monetarias ahora, cambiar a 1 cuando se corra en Prolific. 
+    # comentario justo después de probar lo de arriba: ok, ya el payoff bonus es 0, buenísimo. 
+    real_world_currency_per_point=0.00, participation_fee=0.00, doc=""
 )
 
 PARTICIPANT_FIELDS = ['is_dropout']
@@ -32,9 +34,9 @@ SESSION_FIELDS = ['params']
 # for example: de, fr, ja, ko, zh-hans
 LANGUAGE_CODE = "en"
 
-# e.g. EUR, GBP, CNY, JPY
-REAL_WORLD_CURRENCY_CODE = "USD"
-USE_POINTS = True
+# e.g. EUR, GBP, CNY, JPY. Nota: hay que cambiar esto a dólares cuando se corra el experimento en pROLIFIC
+REAL_WORLD_CURRENCY_CODE = "MXN"
+USE_POINTS = True  # if True, then points are used instead of real-world currency
 
 ADMIN_USERNAME = "admin"
 # for security, best to set admin password in an environment variable

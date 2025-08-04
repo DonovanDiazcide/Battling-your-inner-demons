@@ -105,6 +105,10 @@ def dscore2(data10: list, data13: list, data11: list, data14: list):
 
 class Constants(BaseConstants):
     name_in_url = 'iat'
+    #intente cambiar la siguiente variable a 1, pero eso no es correcto. Lo intenté 
+    # #para que se arreglara el problema de los pagos, pero eso no funcionó, los 
+    # cambios realmente sucedieron en class payoff y en class dictatorOffer.  
+
     players_per_group = None
     num_rounds = 16  # 14 para iat + 4 para dictador
 
@@ -1121,25 +1125,20 @@ def get_actual_iat_round(player: Player):
     return player.round_number
 
 
-def set_payoffs(group: Group):
-    """
-    Asigna los payoffs basados en la decisión del jugador.
-    El jugador mantiene 'kept' y asigna el resto a la categoría.
-    """
-    kept = group.kept
-    assigned = Constants.endowment - kept
+def set_payoffs(group: Group, player: Player):
+     """
+     Guarda la decisión del jugador activo sin sobrescribir
+     los payoffs de los demás participantes del mismo group.
+     """
+     kept = player.dictator_offer
 
-    # Validar que la asignación sea correcta
-    if assigned < 0 or kept < 0 or kept > Constants.endowment:
-        # Manejar errores: asignar valores predeterminados o lanzar excepciones
-        group.assigned = 0
-        group.kept = Constants.endowment
-    else:
-        group.assigned = assigned
+     # Ajustamos los campos del group (sirven solo como
+     # “pizarra” para esta ronda: está bien que se sobrescriban)
+     group.kept     = kept
+     group.assigned = Constants.endowment - kept
 
-    # Asignar el payoff al jugador (manteniendo 'kept')
-    for player in group.get_players():
-        player.payoff = kept
+     # El único payoff que cambiamos es el del jugador actual
+     player.payoff  = kept
 
 
 class Trial(ExtraModel):
@@ -2200,9 +2199,8 @@ class DictatorOffer(Page):
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         # 1) Asignar al grupo y calcular payoff
-        player.group.kept = player.dictator_offer
-        set_payoffs(player.group)
-
+        # ahora basta con una sola llamada
+        set_payoffs(player.group, player)
         # 2) Volcar TODO a participant.vars
         rnd = player.round_number
         pv = player.participant.vars
