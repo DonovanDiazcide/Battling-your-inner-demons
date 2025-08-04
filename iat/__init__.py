@@ -491,7 +491,6 @@ class Player(BasePlayer):
              'f) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '
              ),
         ],
-        widget=widgets.RadioSelect,
         blank=False,
     )
 
@@ -504,7 +503,6 @@ class Player(BasePlayer):
             ('b', 'b) Primero, está ligado a comportamientos relevantes en el mundo real. Segundo, es difícil de manipular ya que mide tu respuesta automática, sin que hayas tenido tiempo de pensar. '),
             ('c', 'c) Primero, no existen otras pruebas para medir sesgos. Segundo, es fácil de implementar.'),
         ],
-        widget=widgets.RadioSelect,
         blank=False,
     )
 
@@ -513,23 +511,22 @@ class Player(BasePlayer):
         label="Arrastra las etapas para ponerlas en el orden correcto:"
     )
 
-    comp_q3 = models.StringField(
-        label=(
-            '3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
-            '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
-            '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
-            '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
-            '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
-            '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
-        ),
-        choices=[
-            ('a', 'a) Termina con 25 pesos'),
-            ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
-            ('c', 'c) Termina con 30 pesos'),
-            ('d', 'd) Termina con 45 pesos')
-        ],
-        widget=widgets.RadioSelect,
-    )
+    # comp_q3 = models.StringField(
+    #     label=(
+    #         '3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
+    #         '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+    #         '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
+    #         '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
+    #         '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+    #         '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
+    #     ),
+    #     choices=[
+    #         ('a', 'a) Termina con 25 pesos'),
+    #         ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
+    #         ('c', 'c) Termina con 30 pesos'),
+    #         ('d', 'd) Termina con 45 pesos')
+    #     ],
+    # )
 
     comp_q4 = models.StringField(
         label=(
@@ -540,7 +537,6 @@ class Player(BasePlayer):
             ('b', 'b) Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'),
             ('c', 'c) Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable. '),
             ],
-        widget=widgets.RadioSelect,
         blank=False,
     )
 
@@ -554,7 +550,6 @@ class Player(BasePlayer):
             ('c', 'c) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D. '),
             ('d', 'd) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.'),
         ],
-        widget=widgets.RadioSelect,
         blank=False,
     )
 
@@ -569,7 +564,7 @@ class Player(BasePlayer):
             ('c',
              'c) Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2. '),
         ],
-        widget=widgets.RadioSelect,
+
         blank=False,
     )
 
@@ -972,8 +967,8 @@ class Player(BasePlayer):
             ['E', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '],
             ['F', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje bueno indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
         ],
+        #a
         blank=True,
-        widget=widgets.RadioSelect,
         label="Supón que haces una Prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?"
     )
 
@@ -987,7 +982,6 @@ class Player(BasePlayer):
             ['C', 'Primero, no existen otras pruebas para medir sesgos. Segundo, es fácil de implementar.'],
         ],
         blank=True,
-        widget=widgets.RadioSelect,
         label="¿Cuáles son las dos características que hacen que la iat sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?"
     )
 
@@ -998,12 +992,16 @@ class Player(BasePlayer):
 
     compr1_q4 = models.StringField(
         choices=[
-            ['A', 'Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'],
+            ['A', '4. Caclula la cantidad de dinero con la que termina el siguiente participante: <br>'
+            '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+            '  • Expresa la opinión alterna a su opinión privada.<br>'
+            '  • Los otros miembros no pagan el costo para decidir dar o quitar 20 pesos.<br>'
+            '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+            '  • Advina correctamente si la opinión que le expresaron los demás miembros es igual a su opinión privada, y recibe 10 pesos adicionales.<br>'],
             ['B', 'Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'],
             ['C', 'Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la iat cayó debajo, dentro o arriba del rango que consideras aceptable. '],
         ],
         blank=True,
-        widget=widgets.RadioSelect,
         label="En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?"
     )
 
@@ -1015,7 +1013,6 @@ class Player(BasePlayer):
             ['D', 'Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.'],
         ],
         blank=True,
-        widget=widgets.RadioSelect,
         label="Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?"
     )
 
@@ -1026,7 +1023,6 @@ class Player(BasePlayer):
             ['C', 'Todas las decisiones involucran a los grupos de Personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de Personas sobre las que no te preguntamos en la Etapa 2.'],
         ],
         blank=True,
-        widget=widgets.RadioSelect,
         label="Escoge la opción correcta sobre tus decisiones en la Etapa 6."
     )
 
@@ -1042,7 +1038,6 @@ class Player(BasePlayer):
             ['F', 'Un puntaje malo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje bueno indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'],
         ],
         blank=True,
-        widget=widgets.RadioSelect,
         label="Supón que haces una Prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?"
     )
 
@@ -1585,14 +1580,13 @@ class Comprehension(Page):
 class ComprehensionFeedback(Page):
     @staticmethod
     def vars_for_template(player):
-        results = player.participant.vars['comp_results']
-        score   = player.participant.vars['comp_score']
+        # 1) Sacamos los resultados y al mismo tiempo los 'poppeamos'
+        #    para que no queden en player.participant.vars
+        results = player.participant.vars.pop('comp_results', {})
 
-        for fname, info in results.items():
-            info['options']     = Constants.QUESTION_OPTIONS[fname]
-            info['explanation'] = Constants.CORRECT_EXPLANATIONS[fname]
+        # 2) Recuperamos el score (no habrá sido 'popped')
+        score = player.participant.vars.get('comp_score', 0)
 
-        player.participant.vars['feedback1_shown'] = True
         return dict(
             results=results,
             score=score,
@@ -1602,12 +1596,13 @@ class ComprehensionFeedback(Page):
     @staticmethod
     def is_displayed(player: Player):
         return (
-                player.participant.vars.get('iat_round_order', []) == list(range(1, 15))
-                and not player.participant.vars.get('feedback1_shown', False)
+            player.participant.vars.get('iat_round_order', []) == list(range(1, 15))
+            and not player.participant.vars.get('feedback1_shown', False)
         )
 
     @staticmethod
     def before_next_page(player, timeout_happened):
+        # Aquí marcamos que ya mostramos feedback, para que is_displayed pase a False
         player.participant.vars['feedback1_shown'] = True
 
 class Comprehension2(Page):
@@ -2083,8 +2078,6 @@ def _active_flags(moral_left, moral_right,
         p_right = p_right if moral_right else False
     # dentro del rango (moral_range=True) dejamos p_in tal cual
     return p_in, p_left, p_right
-
-
 
 from typing import Optional
 

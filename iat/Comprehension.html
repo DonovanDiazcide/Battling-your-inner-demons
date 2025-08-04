@@ -1,103 +1,206 @@
 {% extends "global/Page.html" %}
 {% load otree %}
 
-{% block title %}Cuestionario de comprensión{% endblock %}
+{% block head %}
+  {{ super() }}
+  <style>
+    /* Wrap text inside dropdown items */
+    .dropdown-item {
+      white-space: normal;
+      overflow-wrap: break-word;
+    }
+  </style>
+{% endblock head %}
+
+{% block title %}Cuestionario de comprensión{% endblock title %}
 
 {% block content %}
 <p>Contesta las siguientes preguntas para confirmar que entendiste las reglas.</p>
 <hr>
 
+<!-- comp_q1 -->
 <div class="qblock mb-3">
-  {% formfield player.comp_q1 %}
+  <p><strong>{{ Constants.QUESTION_TEXT.comp_q1|safe }}</strong></p>
+  <div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+            id="dropdown-q1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {% if player.field_maybe_none('comp_q1') %}
+        {% for v,t in Constants.QUESTION_OPTIONS.comp_q1 %}
+          {% if player.field_maybe_none('comp_q1') == v %}
+            {{ t|safe }}
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        Selecciona una opción…
+      {% endif %}
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdown-q1">
+      {% for v,t in Constants.QUESTION_OPTIONS.comp_q1 %}
+        <a class="dropdown-item" href="#" data-val="{{ v }}">{{ t|safe }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="comp_q1" id="comp_q1"
+           value="{{ player.field_maybe_none('comp_q1') }}">
+  </div>
+  <div class="otree-error">{{ formfield_errors 'comp_q1' }}</div>
 </div>
 
+<!-- comp_q2 -->
 <div class="qblock mb-3">
-  {% formfield player.comp_q2 %}
+  <p><strong>{{ Constants.QUESTION_TEXT.comp_q2|safe }}</strong></p>
+  <div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+            id="dropdown-q2" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {% if player.field_maybe_none('comp_q2') %}
+        {% for v,t in Constants.QUESTION_OPTIONS.comp_q2 %}
+          {% if player.field_maybe_none('comp_q2') == v %}
+            {{ t|safe }}
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        Selecciona una opción…
+      {% endif %}
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdown-q2">
+      {% for v,t in Constants.QUESTION_OPTIONS.comp_q2 %}
+        <a class="dropdown-item" href="#" data-val="{{ v }}">{{ t|safe }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="comp_q2" id="comp_q2"
+           value="{{ player.field_maybe_none('comp_q2') }}">
+  </div>
+  <div class="otree-error">{{ formfield_errors 'comp_q2' }}</div>
 </div>
 
-{# PREGUNTA 3: ARRASTRAR ETAPAS #}
+<!-- stage_order -->
 <div class="qblock mb-4">
-  <p><strong>3.&nbsp;Arrastra las etapas para ponerlas en el orden correcto:</strong></p>
-
+  <p><strong>{{ Constants.QUESTION_TEXT.stage_order|safe }}</strong></p>
   <ul id="sortable-stages" class="list-group mb-2">
     {% for etapa in etapas_aleatorias %}
-      <li class="list-group-item cursor-move">
-        {{ etapa }}
-      </li>
+      <li class="list-group-item cursor-move">{{ etapa }}</li>
     {% endfor %}
   </ul>
+  <textarea id="stage_order_input" name="stage_order" hidden>{{ player.field_maybe_none('stage_order') }}</textarea>
+  <div class="otree-error">{{ formfield_errors 'stage_order' }}</div>
+  <small class="text-muted">(Arrastra y suelta para reordenar; continúa cuando termines.)</small>
+</div>
 
-<textarea id="stage_order_input"
-          name="stage_order"
-          hidden>{{ player.field_maybe_none('stage_order') }}</textarea>
-
-  {# mostramos aquí el error, si lo hay #}
-  <div class="otree-error">
-    {{ formfield_errors 'stage_order' }}
+<!-- comp_q4 -->
+<div class="qblock mb-3">
+  <p><strong>{{ Constants.QUESTION_TEXT.comp_q4|safe }}</strong></p>
+  <div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+            id="dropdown-q4" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {% if player.field_maybe_none('comp_q4') %}
+        {% for v,t in Constants.QUESTION_OPTIONS.comp_q4 %}
+          {% if player.field_maybe_none('comp_q4') == v %}
+            {{ t|safe }}
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        Selecciona una opción…
+      {% endif %}
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdown-q4">
+      {% for v,t in Constants.QUESTION_OPTIONS.comp_q4 %}
+        <a class="dropdown-item" href="#" data-val="{{ v }}">{{ t|safe }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="comp_q4" id="comp_q4"
+           value="{{ player.field_maybe_none('comp_q4') }}">
   </div>
-
-  <small class="text-muted">
-    (Arrastra y suelta para reordenar. Continúa cuando termines.)
-  </small>
+  <div class="otree-error">{{ formfield_errors 'comp_q4' }}</div>
 </div>
 
+<!-- comp_q5 -->
 <div class="qblock mb-3">
-  {% formfield player.comp_q4 %}
+  <p><strong>{{ Constants.QUESTION_TEXT.comp_q5|safe }}</strong></p>
+  <div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+            id="dropdown-q5" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {% if player.field_maybe_none('comp_q5') %}
+        {% for v,t in Constants.QUESTION_OPTIONS.comp_q5 %}
+          {% if player.field_maybe_none('comp_q5') == v %}
+            {{ t|safe }}
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        Selecciona una opción…
+      {% endif %}
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdown-q5">
+      {% for v,t in Constants.QUESTION_OPTIONS.comp_q5 %}
+        <a class="dropdown-item" href="#" data-val="{{ v }}">{{ t|safe }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="comp_q5" id="comp_q5"
+           value="{{ player.field_maybe_none('comp_q5') }}">
+  </div>
+  <div class="otree-error">{{ formfield_errors 'comp_q5' }}</div>
 </div>
 
+<!-- comp_q6 -->
 <div class="qblock mb-3">
-  {% formfield player.comp_q5 %}
-</div>
-
-<div class="qblock mb-3">
-  {% formfield player.comp_q6 %}
+  <p><strong>{{ Constants.QUESTION_TEXT.comp_q6|safe }}</strong></p>
+  <div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+            id="dropdown-q6" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      {% if player.field_maybe_none('comp_q6') %}
+        {% for v,t in Constants.QUESTION_OPTIONS.comp_q6 %}
+          {% if player.field_maybe_none('comp_q6') == v %}
+            {{ t|safe }}
+          {% endif %}
+        {% endfor %}
+      {% else %}
+        Selecciona una opción…
+      {% endif %}
+    </button>
+    <div class="dropdown-menu" aria-labelledby="dropdown-q6">
+      {% for v,t in Constants.QUESTION_OPTIONS.comp_q6 %}
+        <a class="dropdown-item" href="#" data-val="{{ v }}">{{ t|safe }}</a>
+      {% endfor %}
+    </div>
+    <input type="hidden" name="comp_q6" id="comp_q6"
+           value="{{ player.field_maybe_none('comp_q6') }}">
+  </div>
+  <div class="otree-error">{{ formfield_errors 'comp_q6' }}</div>
 </div>
 
 {% next_button %}
-{% endblock %}
+{% endblock content %}
 
 {% block scripts %}
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script>
-  // 1) Toggle de opciones radio
-  document.querySelectorAll('.qblock').forEach(block => {
-    if (block.querySelector('.q-toggle')) return;
-    const checks = block.querySelectorAll('.form-check');
-    if (!checks.length) return;
-    checks.forEach(chk => chk.classList.add('d-none'));
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-primary btn-sm mt-2 q-toggle';
-    btn.textContent = 'Da click para ver los incisos de la pregunta';
-    block.appendChild(btn);
-    btn.addEventListener('click', () => {
-      checks.forEach(chk => chk.classList.remove('d-none'));
-      btn.classList.add('d-none');
-    });
-    checks.forEach(chk => {
-      const radio = chk.querySelector('input[type=radio]');
-      radio.addEventListener('change', () => {
-        checks.forEach(c => c.classList.add('d-none'));
-        btn.textContent = '✓ Respuesta registrada, da clic nuevamente si quieres revisar o cambiar tu respuesta';
-        btn.classList.remove('d-none');
+    // Custom dropdown behavior: update hidden input & button label
+    document.querySelectorAll('.dropdown').forEach(dd => {
+      dd.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', e => {
+          e.preventDefault();
+          const v = item.dataset.val;
+          const label = item.innerHTML;
+          dd.querySelector('input[type=hidden]').value = v;
+          dd.querySelector('.dropdown-toggle').innerHTML = label;
+        });
       });
     });
-  });
 
-  // 2) Drag & drop SortableJS
-  const list  = document.getElementById('sortable-stages');
-  const input = document.getElementById('stage_order_input');
-  if (list && input) {
-    Sortable.create(list, {
-      animation: 150,
-      onSort: saveOrder,
-    });
-    function saveOrder() {
-      const items = Array.from(list.children)
-                         .map(li => li.textContent.trim());
-      input.value = items.join('\n');
+    // Sortable for stage order
+    const list = document.getElementById('sortable-stages');
+    const input = document.getElementById('stage_order_input');
+    if (list && input) {
+      Sortable.create(list, {
+        animation: 150,
+        onSort: () => {
+          input.value = Array.from(list.children)
+                             .map(li => li.textContent.trim())
+                             .join('\n');
+        },
+      });
+      // Initialize
+      input.value = Array.from(list.children)
+                         .map(li => li.textContent.trim())
+                         .join('\n');
     }
-    saveOrder();
-  }
   </script>
-{% endblock %}
+{% endblock scripts %}
