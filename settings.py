@@ -24,7 +24,7 @@ SESSION_CONFIGS = [
 SESSION_CONFIG_DEFAULTS = dict(
     # cada punto vale 0 unidades monetarias ahora, cambiar a 1 cuando se corra en Prolific. 
     # comentario justo después de probar lo de arriba: ok, ya el payoff bonus es 0, buenísimo. 
-    real_world_currency_per_point=0.001, participation_fee=0.00, doc=""
+    real_world_currency_per_point=0.001, participation_fee=0.001, doc=""
 )
 
 PARTICIPANT_FIELDS = ['is_dropout', 'finished']
