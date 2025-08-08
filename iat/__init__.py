@@ -1249,6 +1249,9 @@ class Intro(Page):
             params=params,
             labels=labels_for_block(block) if isinstance(block, dict) else {},
         )
+
+
+
     
     @staticmethod
     def before_next_page(player, timeout_happened):
@@ -2187,7 +2190,8 @@ class ResultsDictador(Page):
         #agrego la línea de código necesaria para prolific. punto 3 del paso 1 del tutorial de otree hr. 
         
         
-        return dict(dictator_offers=dictator_offers)
+        return dict(dictator_offers=dictator_offers,             
+                    prolific_completion_url=getattr(player.session, 'prolific_completion_url', None),)
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):

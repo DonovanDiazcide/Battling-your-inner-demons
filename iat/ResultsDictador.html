@@ -37,9 +37,16 @@
   </strong> {{ offer.assigned }}</p>
 {% endfor %}
 
-<p>
-Click <a href="{{ session.prolific_completion_url }}">here</a>
-to complete the study.
-</p>
+{% if prolific_completion_url %}
+  <p>
+    Click <a href="{{ prolific_completion_url }}">here</a> to complete the study.
+  </p>
+  <!-- O redirección automática:
+  <meta http-equiv="refresh" content="0; URL={{ prolific_completion_url }}">
+  -->
+{% else %}
+  <p><em>No hay un completion URL configurado.</em></p>
+{% endif %}
+
 
 {% endblock %}
