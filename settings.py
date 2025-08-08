@@ -13,11 +13,6 @@ SESSION_CONFIGS = [
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
                         15: 1, 16: 1,
                         },
-
-
-        #agregué una nueva variable con el link de completación del experimento para redirigir a los participantes a prolific. 
-        completionlink=
-       'https://app.prolific.co/submissions/complete?cc=11111111',
     ),
 ]
 

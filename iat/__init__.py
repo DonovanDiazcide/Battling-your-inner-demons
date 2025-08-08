@@ -442,10 +442,6 @@ def get_num_iterations_for_round(rnd):
 
 
 class Player(BasePlayer):
-
-    #prolific
-    prolific_id = models.StringField(default=str(" "))
-
     iteration = models.IntegerField(initial=0)  # Contador para iteraciones del jugador
     num_trials = models.IntegerField(initial=0)  # Número total de intentos del jugador
     num_correct = models.IntegerField(initial=0)  # Número de respuestas correctas
@@ -2225,12 +2221,6 @@ class ResultsDictador(Page):
         if payoff16 is not None:
             player.payoff = payoff16
 
-    @staticmethod              
-    def js_vars(player):
-        return dict(
-            completionlink=
-              player.subsession.session.config['completionlink']
-        )
 
 
 class ResultsDictator2(Page):
