@@ -1,63 +1,87 @@
-{{ block title }}
-    Pregunta.
-{{ endblock }}
+{% extends "global/Page.html" %}
+{% load static %}
 
-{% block styles %}
-    <link href="{% static 'iat.css' %}" rel="stylesheet"/>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-top: 20px;
-        }
-        form {
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 16px;
-            color: #333;
-        }
-        textarea {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            resize: vertical;
-            font-size: 14px;
-        }
-        button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+{% block title %}
+    Etapa 1: Encuesta, preguntas morales.
 {% endblock %}
 
-{{ block content }}
-    {{ formfields }}
-    {{ next_button }}
-{{ endblock }}
+{% block styles %}
+<link href="{% static 'iat.css' %}" rel="stylesheet"/>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-top: 20px;
+    }
+    form {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 16px;
+        color: #333;
+    }
+    textarea {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        font-size: 14px;
+    }
+    button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    button:hover {
+        background-color: #0056b3;
+    }
+    .instructions {
+        background-color: #f9f9f9;      /* fondo muy suave */
+        border-left: 4px solid #ccc;     /* borde gris */
+        padding: 15px;
+        margin-bottom: 25px;
+        line-height: 1.6;
+        color: #666;                     /* texto gris */
+    }
+    .instructions p {
+        margin: 0 0 10px;
+        color: #666;                     /* asegurar color en párrafos */
+    }
+    .instructions strong {
+        color: #444;                     /* un poco más oscuro para el énfasis */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="instructions">
+    <p><strong>Antes de responder, por favor lee atentamente las siguientes instrucciones:</strong></p>
+    <p>En esta encuesta responderás 6 preguntas de respuesta abierta. Cada pregunta requiere un texto breve que refleje tu opinión y experiencia. Tus respuestas son fundamentales para comprender los procesos de toma de decisiones morales en contextos cotidianos.</p>
+    <p>Por favor, responde de forma honesta y cuidadosa.</p>
+  </div>
+
+  {{ formfields }}
+  {{ next_button }}
+{% endblock %}

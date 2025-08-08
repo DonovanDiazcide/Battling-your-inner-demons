@@ -12,51 +12,88 @@ from pathlib import Path
 import csv
 
 DICT = {
-    'canidae': ['dog', 'wolf', 'coyote', 'fox', 'jackal'],
-    'felidae': ['cat', 'tiger', 'lynx', 'wildcat', 'cougar'],
-    'white': ['word1', 'word2', 'word3', 'word4', 'word5'],
-    'black': ['word1', 'word2', 'word3', 'word4', 'word5'],
+    'Personas obesas': ['dog', 'wolf', 'coyote', 'fox', 'jackal'],
+    'Personas delgadas': ['cat', 'tiger', 'lynx', 'wildcat', 'cougar'],
+    'Personas homosexuales': ['word1', 'word2', 'word3', 'word4', 'word5'],
+    'Personas heterosexuales': ['word1', 'word2', 'word3', 'word4', 'word5'],
 
-    'images:white': [
-            "euroam1.png",
-            "euroam2.png",
-            "euroam3.png",
-            "euroam4.png",
-            "euroam5.png",
-            "euroam6.png",
+    'images:Personas homosexuales': [
+        "homofinal.png",
+        "05_GAY.jpg",
+        "homo1.png",
+        "homo2.png",
+        "07_lesbian.jpg",
+        "15_lesbian.jpg",
+        "14_gay.jpg"
     ],
-    "images:black": [
-            "africanam1.png",
-            "africanam2.png",
-            "africanam3.png",
-            "africanam4.png",
-            "africanam5.png",
-            "africanam6.png",
+    "images:Personas heterosexuales": [
+        "heterofinal.png",
+        "06_hetero.jpg",
+        "hetero1.png",
+        "hetero2.png",
+        "13_hetero.jpg",
     ],
-    'images:canidae': [
-        "320px-Black_Labrador_Retriever_-_Male_IMG_3323.jpg",
-        "247px-Kolmården_Wolf.jpg",
-        "207px-2009-Coyote-Yosemite.jpg",
-        "Vulpes_vulpes_ssp_fulvus.jpg",
-        "320px-Black-backed_jackal_(Canis_mesomelas_mesomelas)_2.jpg",
+    # ojo, esto era gato/canidae
+    'images:Personas delgadas': [
+        "1_A.jpg",
+        "2_A.jpg",
+        "3_A.jpg",
+        "4_A.jpg",
+        "5_A.jpg",
+        "6_A.jpg",
+        "7_A.jpg",
+        "8_A.jpg",
+        "9_A.jpg",
+        "10_A.jpg",
     ],
-    "images:felidae": [
-        "320px-Cat_August_2010-4.jpg",
-        "320px-Walking_tiger_female.jpg",
-        "159px-Lynx_lynx2.jpg",
-        "Felis_silvestris_silvestris_Luc_Viatour.jpg",
-        "320px-Mountain_Lion_in_Glacier_National_Park.jpg",
+    "images:Personas obesas": [
+        "1_B.jpg",
+        "2_B.jpg",
+        "3_B.jpg",
+        "4_B.jpg",
+        "5_B.jpg",
+        "6_B.jpg",
+        "7_B.jpg",
+        "8_B.jpg",
+        "9_B.jpg",
+        "10_B.jpg",
     ],
-    'positive': ['amusement', 'fun', 'friendship', 'happyness', 'joy'],
-    'negative': ['anger', 'hate', 'fear', 'panic', 'sickness'],
-    'emojis:positive': [
+    'bueno': ['amusement', 'fun', 'friendship', 'happyness', 'joy'],
+    'malo': ['anger', 'hate', 'fear', 'panic', 'sickness'],
+    #bueno obeso
+    'images:Bueno': [
+        #aquí le puedo pedir a chatgpt que genere pngs de las midmas dimensiones al igual que la imagen de etc.
+        "bueno1.png",
+        "bueno2.png",
+        "bueno3.png",
+        "bueno4.png",
+        "bueno5.png",
+        "bueno6.png",
+        "bueno7.png",
+        "bueno8.png",
+    ],
+    #malo obseo
+    'images:Malo': [
+        "malo1.png",
+        "malo2.png",
+        "malo3.png",
+        "malo4.png",
+        "malo5.png",
+        "malo6.png",
+        "malo7.png",
+        "malo8.png",
+    ],
+    #bueno sexualidad
+'images:bueno sexualidad': [
+        #aquí le puedo pedir a chatgpt que genere pngs de las midmas dimensiones al igual que la imagen de etc.
         "emoji_u263a.png",
         "emoji_u1f600.png",
         "emoji_u1f601.png",
         "emoji_u1f60a.png",
         "emoji_u1f60d.png",
     ],
-    'emojis:negative': [
+    #malo sexualidad
+    'images:malo sexualidad': [
         "emoji_u2639.png",
         "emoji_u1f612.png",
         "emoji_u1f616.png",

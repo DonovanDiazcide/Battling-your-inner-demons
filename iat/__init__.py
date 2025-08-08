@@ -1,5 +1,7 @@
 import time
 import random
+import logging
+
 # from .admin_report_functions import *
 from otree.api import *
 from otree import settings
@@ -10,13 +12,13 @@ import math
 from statistics import mean, stdev
 from decimal import Decimal
 
-# comentarios
-
-
+# comentarios.
 doc = """
 Implicit Association Test, draft
 """
 from statistics import mean, stdev
+
+
 
 def dscore1(data3: list, data4: list, data6: list, data7: list):
     # Filtrar valores demasiado largos.
@@ -100,15 +102,211 @@ def dscore2(data10: list, data13: list, data11: list, data14: list):
     return dscore_mean2
 
 
+
 class Constants(BaseConstants):
     name_in_url = 'iat'
-    players_per_group = None
-    num_rounds = 18  # 14 para IAT + 4 para dictador
+    #intente cambiar la siguiente variable a 1, pero eso no es correcto. Lo intenté 
+    # #para que se arreglara el problema de los pagos, pero eso no funcionó, los 
+    # cambios realmente sucedieron en class payoff y en class dictatorOffer.  
 
-    keys = {"f": 'left', "j": 'right'}
+    players_per_group = None
+    num_rounds = 16  # 14 para iat + 4 para dictador
+
+    keys = {"e": 'left', "i": 'right'}
     trial_delay = 0.250
     endowment = Decimal('100')  # Añadido para dictador
-    categories = ['perro', 'gato', 'blanco', 'negro']  # Categorías para el Dictador
+    categories = ['personas delgadas y personas obesas', 'personas homosexuales y personas heterosexuales']  # Categorías para el Dictador
+    PersonasDelgadas = "personas delgadas"
+    PersonasObesas = "personas obesas"
+    PersonasHeterosexuales = "personas heterosexuales"
+    PersonasHomosexuales = "personas homosexuales"
+
+    # 1 ·  lista canónica para no repetir
+    STAGES_CORRECT = [
+        "Sociodemográfica",
+        "Pruebas de asociación implícita",
+        "Adivinas tus puntajes en las pruebas de la Etapa 2",
+        "Rango aceptable de puntajes en las pruebas de la Etapa 2",
+        "Qué información revelar en las decisiones de la Etapa 6",
+        "Decisiones monetarias que pueden afectar a grupos de la Etapa 2",
+    ]
+
+    CORRECT_ANSWERS = dict(
+        comp_q1='e',
+        comp_q2='b',
+        stage_order="\n".join(STAGES_CORRECT),  # tu BooleanField usa True/False
+        comp_q4='c',
+        comp_q5='d',
+        comp_q6='c',
+    )
+
+    QUESTION_TEXT = dict(
+        comp_q1=(
+            '1. Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?'),
+        comp_q2=(
+            '2. ¿Cuáles son las dos características que hace que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?'),
+        stage_order=(
+            "3. Arrastra las etapas para ponerlas en el orden correcto:"
+        ),
+        comp_q4=('4. En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?'),
+        comp_q5=('5. Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?'),
+        comp_q6=('6. ¿Qué es lo que cada participantes debe adivinar sobre los miembros de su grupo en este experimento?'),
+    )
+
+    QUESTION_OPTIONS = dict(
+        comp_q1=[
+            ('a',
+             'a) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('b',
+             'b) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('c',
+             'c) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('d',
+             'd) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '),
+            ('e',
+             'e) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'
+             ),
+            ('f',
+             'f) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '
+             ),
+        ],
+
+        comp_q2=[
+            ('a',
+             'a) Primero, hay una base de datos con cientos de miles de participantes que ya tomaron la prueba. Segundo, fue desarrollado por académicos.'),
+            ('b',
+             'b) Primero, está ligado a comportamientos relevantes en el mundo real. Segundo, es difícil de manipular ya que mide tu respuesta automática, sin que hayas tenido tiempo de pensar. '),
+            ('c', 'c) Primero, no existen otras pruebas para medir sesgos. Segundo, es fácil de implementar.'),
+        ],
+
+        stage_order=[],
+
+        comp_q4=[
+            ('a',
+             'a) Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'),
+            ('b',
+             'b) Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'),
+            ('c',
+             'c) Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable. '),
+        ],
+
+        comp_q5=[
+            ('a', 'a) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D.'),
+            ('b', 'b) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la dentidad de los grupos C y D.'),
+            ('c', 'c) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D. '),
+            ('d',
+             'd) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.'),
+        ],
+        comp_q6=[
+            ('a',
+             'a) Ninguna decisión involucra a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('b',
+             'b) No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('c',
+             'c) Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2. '),
+        ],
+    )
+
+    CORRECT_EXPLANATIONS = dict(
+        comp_q1='Tu puntaje se compara con los datos de Project Implicit, una base con cientos de miles de participantes. Una puntuación de cero representa el promedio de dicha base. La interpretación del puntaje depende de cuál de los dos grupos es el grupo "base" para fines de la comparación. En la pregunta, el grupo B es el grupo "base". Un puntaje positivo indicaría que, comparado a la base de datos de Project Implicit, el/la participante asocia con mayor facilidad a los del grupo B con los atributos positivos en comparación la asociación que hace con los del grupo A. Un puntaje negativo indica una asociación relativamente más fuerte de los del grupo A con atributos positivos en comparación con la asociación con los del grupo B. ',
+        comp_q2='Como mostramos con los estudios que mencionamos, hay mucha evidencia que la Prueba de Asociación Implícita está ligada a comportamientos relevantes en el mundo real. A diferencia de otras pruebas, la Prueba de Asociación Implícita es difícil de manipular ya que mide tu respuesta automática---tu primera reacción, sin haber tenido tiempo para pensar. Sí existen otras pruebas para medir sesgos que tienen muchos participantes que ya tomaron la prueba, que fueron desarrollados por académicos, pero la Prueba de Asociación Implícita destaca por las dos razones que mencionamos. ',
+        stage_order=(
+                "El orden correcto es:\n• " + "\n• ".join(STAGES_CORRECT)
+        ),
+        comp_q4='No es directa la decisión sobre la información que se te revela—no te vamos a preguntar simplemente si quieres que se te revele la información sobre cada grupo. En vez de eso, la decisión va a depender de tus puntajes en las pruebas de asociación implícita y en el rango de puntajes aceptables que nos diste en la cuarta etapa. Para los dos grupos de personas que aparecieron en una de las pruebas, vamos a tomar en cuenta tres rangos en donde pudo haber caído tu puntaje: abajo del rango que consideras aceptable, dentro del rango que consideras aceptable, y arriba del rango que consideras aceptable. Para cada rango, nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a la decisión en caso de que tu puntaje de la prueba de asociación que incluía a ese grupo haya caído dentro de ese rango.',
+        comp_q5='Recuerda que con 20% de probabilidad vamos a hacer lo contrario a lo que nos pediste que hiciéramos en esta quinta etapa. Si tu puntaje cayó en un rango en el que querías que no te reportáramos la identidad de los grupos, con 20% de probabilidad te la vamos a reportar. Si tu puntaje cayó en un rango en el que sí querías que te reportáramos la identidad de los grupos, con 20% de probabilidad no te la vamos a reportar. Nota que con 80% de probabilidad sí vamos a hacer lo que nos pediste, por lo que sigue siendo mejor para ti reportarnos lo que realmente quieres que hagamos en cada rango. También nota que de esta manera no vas a poder saber con certeza en qué rango cayó tu puntaje de la Prueba de Asociación Implícita basado en la información que recibes en la Etapa 6.',
+        comp_q6='Los participantes deben adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
+    )
+
+    #cuestionarios de comprensión para el segundo grupo.
+
+    CORRECT_ANSWERS2 = dict(
+        comp_q1_2='c',
+        comp_q2_2='d',
+        comp_q3_2='a',  # tu BooleanField usa True/False
+        comp_q4_2='c',
+        comp_q5_2='d',
+        comp_q6_2='c',
+    )
+
+    QUESTION_TEXT2 = dict(
+        comp_q1_2=(
+            '1. ¿Cuál de las siguientes opciones describe correctamente las acciones disponibles para un participante una vez que se formó su grupo en el experimento?'),
+        comp_q2_2=(
+            '2. ¿Qué sucede si un participante decide pagar el costo (5 pesos) para darle o quitarle 20 pesos a los demás miembros de su grupo, y el participante decide quitarle 20 pesos a uno de ellos?'),
+        comp_q3_2=('3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
+                 '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+                 '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
+                 '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
+                 '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+                 '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
+                 ),
+        comp_q4_2=('4. Caclula la cantidad de dinero con la que termina el siguiente participante: <br>'
+                 '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+                 '  • Expresa la opinión alterna a su opinión privada.<br>'
+                 '  • Los otros miembros no pagan el costo para decidir dar o quitar 20 pesos.<br>'
+                 '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+                 '  • Advina correctamente si la opinión que le expresaron los demás miembros es igual a su opinión privada, y recibe 10 pesos adicionales.<br>'),
+        comp_q5_2=('¿Cómo se crean los grupos de tres personas en el experimento?'),
+        comp_q6_2=(
+            '6. ¿Qué es lo que cada participantes debe adivinar sobre los miembros de su grupo en este experimento?'),
+        )
+
+    QUESTION_OPTIONS2 = dict(
+        comp_q1_2=[
+            ('a',
+             'a) Escoger qué opinión expresarle a los demás en el grupo. Decidir si dar o quitar dinero a cada uno de los miembros. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('b',
+             'b) Escoger qué opinión expresarle a los demás en el grupo. Adivinar si la opinión que los demás mimebros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('c',
+             'c) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('d',
+             'd) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+        ],
+        comp_q2_2=[
+            ('a', 'a) El participante gana 20 pesos'),
+            ('b', 'b) El participante recupera los 5 pesos pagados y el otro miembro gana 20 pesos adicionales'),
+            ('c', 'c) Sólo el que paga pierde dinero; el otro miembro no gana ni pierde nada'),
+            ('d', 'd) El participante pierde 5 pesos y el otro miembro pierde 20 pesos'),
+        ],
+        comp_q3_2=[
+            ('a', 'a) Termina con 25 pesos'),
+            ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
+            ('c', 'c) Termina con 30 pesos'),
+            ('d', 'd) Termina con 45 pesos'),
+        ],
+        comp_q4_2=[
+            ('a', 'a) Termina con 40 pesos'),
+            ('b', 'b) Termina con 15 pesos'),
+            ('c', 'c) Termina con 65 pesos'),
+            ('d', 'd) Termina con 50 pesos'),
+        ],
+        comp_q5_2=[
+            ('a', 'a) Según sus características personales (por ejemplo, edad o género)'),
+            ('b', 'b) Los participantes eligen libremente a los mimebros de su grupo'),
+            ('c', 'c) De forma totalmente aleatoria'),
+            ('d',
+             'd) Basándose en las opiniones privadas de los participantes sobre cada uno de los temas de la Parte 3 del experimento'),
+        ],
+        comp_q6_2=[
+            ('a', 'a) Si la opinión que los demás miembros le expresaron es la misma que expresaron en privado'),
+            ('b',
+             'b) La decisión que tomará cada uno de los mimebros sobre dar o quitar 20 pesos a los demás y si la opinión que los demás miembros le expresaron es la misma que expresaron en privado'),
+            ('c',
+             'c) Si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('d', 'd) Si la opinión que los demás miembros le expresaron es diferente a su opinión privada'),
+        ],
+    )
+
+    CORRECT_EXPLANATIONS2 = dict(
+        comp_q1_2='Las acciones disponibles para un participante una vez que se formó su grupo son: (1) escoger qué opinión expresarle a los demás en el grupo, (2) para quienes pagaron el costo por hacerlo decidir si dar o quitar dinero a cada uno de los miembros, (3) adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado, y (4) adivinar el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
+        comp_q2_2='Los participantes que pagan el costo por decidir dar o quitar 20 pesos a los demás miembros de su grupo se les sustrae 5 pesos de su dinero disponible. Si los participantes deciden quitarle 20 pesos a uno de los miembros, esa decisión se aplicará al miembro; pierde 20 pesos.',
+        comp_q3_2='El participante recibe 50 pesos por participar, pierde 5, gana 10, pierde 40 y gana 10. Entonces, termina con 50 - 5 + 10 - 40 + 10 = 25 pesos.',
+        comp_q4_2='El participante recibe 50 pesos por participar, pierde 5, gana 10 y gana 10. Entonces, termina con 50 - 5 + 10 + 10 = 65 pesos.',
+        comp_q5_2='Los grupos de tres personas se forman a partir de las opiniones privadas de los participantes sobre cada uno de los temas de la Parte 3 del experimento.',
+        comp_q6_2='Los participantes deben adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.',
+    )
+
 
 
 def url_for_image(filename):
@@ -133,32 +331,46 @@ def creating_session(self):
         secondary=[None, None],
         secondary_images=False,
         num_iterations={
-            # Rondas existentes para IAT.
+            # Rondas existentes para iat.
             1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
             8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
             # Rondas adicionales para Dictador.
-            15: 1, 16: 1, 17: 1, 18: 1
+            15: 1, 16: 1
         },
     )
     session.params = {}
     for param in defaults:
         session.params[param] = session.config.get(param, defaults[param])
 
-
-    # Asignar orden de rondas del IAT solo en la primera ronda
     if self.round_number == 1:
-        for player in self.get_players():
-            blocks.iat_ordering = random.choice([
-                list(range(1, 15)),  # Orden directo: 1-14
-                list(range(8, 15)) + list(range(1, 8))  # Orden invertido: 8-14,1-7
-            ])
-            player.participant.vars['iat_round_order'] = blocks.iat_ordering
-            print(blocks.iat_ordering)
+        players = list(self.get_players())
+        random.shuffle(players)
+        mitad = len(players) // 2
 
-        # Aleatorizar las categorías del Dictador para las rondas 15-18
+        orden_directo = list(range(1, 15))
+        orden_invertido = list(range(8, 15)) + list(range(1, 8))
+
+        # 50% → directos
+        for p in players[:mitad]:
+            p.participant.vars['iat_round_order'] = orden_directo
+
+        # 50% → invertidos
+        for p in players[mitad:]:
+            p.participant.vars['iat_round_order'] = orden_invertido
+
+        # --- Nuevo bloque: imprime resumen ordenado ---
+        print("[IAT ORDER SUMMARY]")
+        for p in sorted(players, key=lambda p: p.id_in_subsession):
+            order = p.participant.vars['iat_round_order']
+            # aquí decides cómo formatear el texto
+            print(f"Jugador {p.id_in_subsession}: {order}")
+
+        # tu código de categorías del Dictador sigue igual
         shuffled_categories = Constants.categories.copy()
         random.shuffle(shuffled_categories)
         session.vars['shuffled_dictator_categories'] = shuffled_categories
+        # Fijamos orden: 15→delgadas/obesas, 16→homo/hetero
+        session.vars['shuffled_dictator_categories'] = Constants.categories.copy()
 
     block = get_block_for_round(self.round_number, session.params)
 
@@ -171,7 +383,7 @@ def creating_session(self):
         #print("shuffled categories:", shuffled_categories)
 
     # Asignar categorías al Dictador basadas en la lista aleatoria para las rondas 15-18
-    if self.round_number in [15, 16, 17, 18]:
+    if self.round_number in [15, 16]:
         shuffled_categories = session.vars.get('shuffled_dictator_categories')
         if shuffled_categories:
             # Asignar una categoría por ronda 15-18 al grupo
@@ -230,114 +442,497 @@ def get_num_iterations_for_round(rnd):
 
 
 class Player(BasePlayer):
+
+    #prolific
+    prolific_id = models.StringField(default=str(" "))
+
     iteration = models.IntegerField(initial=0)  # Contador para iteraciones del jugador
     num_trials = models.IntegerField(initial=0)  # Número total de intentos del jugador
     num_correct = models.IntegerField(initial=0)  # Número de respuestas correctas
+    edad = models.IntegerField(label="Edad", min=18, max=120, )
     num_failed = models.IntegerField(initial=0)  # Número de respuestas incorrectas
-    name = models.StringField(label="Nombre")
-    age = models.IntegerField(label="Edad", min=0, max=99)
-    sports = models.StringField(
-        widget=widgets.RadioSelect,
+    sexo = models.StringField(
+        label="¿Cuál es tu sexo?",
         choices=[
-            ('Futból', 'Futból'),
-            ('Basketball', 'Basketball'),
-            ('Tenis', 'Tenis'),
-            ('Natación', 'Natación'),
-            ('Otro', 'Otro'),
-        ],
-        label="¿Qué deporte prefieres?"
+            ('M', 'Masculino'),
+            ('F', 'Femenino'),
+            ('NB', 'No binario'),
+            ('ND', 'Prefiero no decirlo')
+        ]
     )
+
     random_number = models.IntegerField(label="Número aleatorio entre 1 y 20", min=1, max=20)
-    dscore1 = models.FloatField()  # D-score del primer IAT
-    dscore2 = models.FloatField()  # D-score del segundo IAT
+    ha_participado = models.StringField(
+        label="¿Has participado en experimentos previamente?",
+        choices=['Sí', 'No'],
+        blank = True,  # <--- permitimos valor nulo al inicio
 
-    # Nuevo campo para la pregunta moral
-    moral_question = models.StringField(label="Aquí va una pregunta moral", blank=True)
-
-    iat2_self_assessment = models.StringField(
-        label="¿Cómo crees que te fue en el IAT de blanco y negro?",
-        choices=[
-            "Neutral",
-            "Asociación leve a blanco+feliz, negro+triste",
-            "Asociación leve a blanco+triste, negro+feliz",
-            "Asociación moderada a blanco+feliz, negro+triste",
-            "Asociación moderada a blanco+triste, negro+feliz",
-            "Asociación fuerte a blanco+feliz, negro+triste",
-            "Asociación fuerte a blanco+triste, negro+feliz",
-        ],
-        widget=widgets.RadioSelect
     )
+
+    num_experimentos = models.IntegerField(
+        label="¿En cuántos?",
+        min=0,
+        blank=True
+    )
+
+    dscore1 = models.FloatField()  # D-score del primer iat
+    dscore2 = models.FloatField()  # D-score del segundo iat
+
+    # ─── Cuestionario de comprensión 1────────────────────────────────────
+    comp_q1 = models.StringField(
+        label=(
+            '1. ¿Supón que haces una prueba de asociación implícita que involucra a grupos A y B, en donde el grupo B es el grupo “base”. ¿Qué puntaje indicaría que tu sesgo implícito es igual al promedio de cientos de miles de participantes? ¿Qué puntaje indicaría que tu sesgo implícito favorece al grupo A más que el promedio de cientos de miles de participantes?'
+        ),
+        choices=[
+            ('a',
+             'a) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('b',
+             'b) Un puntaje positivo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('c',
+             'c) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'),
+            ('d',
+             'd) Un puntaje de cero indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje negativo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '),
+            ('e',
+             'e) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje de cero indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes.'
+             ),
+            ('f',
+             'f) Un puntaje negativo indica que mi sesgo implícito es igual al promedio de cientos de miles de participantes. Un puntaje positivo indica que mi sesgo implícito favorece al grupo A más que cientos de miles de participantes. '
+             ),
+        ],
+        blank=False,
+    )
+
+    comp_q2 = models.StringField(
+        label=(
+            '2. ¿Cuáles son las dos características que hace que la Prueba de Asociación Implícita sea una manera robusta de medir sesgos que tal vez ni siquiera sabías que tenías?'
+        ),
+        choices=[
+            ('a', 'a) Primero, hay una base de datos con cientos de miles de participantes que ya tomaron la prueba. Segundo, fue desarrollado por académicos.'),
+            ('b', 'b) Primero, está ligado a comportamientos relevantes en el mundo real. Segundo, es difícil de manipular ya que mide tu respuesta automática, sin que hayas tenido tiempo de pensar. '),
+            ('c', 'c) Primero, no existen otras pruebas para medir sesgos. Segundo, es fácil de implementar.'),
+        ],
+        blank=False,
+    )
+
+    stage_order = models.LongStringField(
+        blank=True,
+        label="Arrastra las etapas para ponerlas en el orden correcto:"
+    )
+
+    # comp_q3 = models.StringField(
+    #     label=(
+    #         '3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
+    #         '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+    #         '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
+    #         '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
+    #         '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+    #         '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
+    #     ),
+    #     choices=[
+    #         ('a', 'a) Termina con 25 pesos'),
+    #         ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
+    #         ('c', 'c) Termina con 30 pesos'),
+    #         ('d', 'd) Termina con 45 pesos')
+    #     ],
+    # )
+
+    comp_q4 = models.StringField(
+        label=(
+            '4. ¿En la Etapa 5 (qué información revelar en la Etapa 6), ¿cómo tomas la decisión de qué se te revela en la Etapa 6?'
+        ),
+        choices=[
+            ('a', 'a) Tomas una sola decisión sobre todos los grupos a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de todos los grupos cuando estés en la Etapa 6.'),
+            ('b', 'b) Tomas una decisión para cada grupo a los cuales puedes afectar monetariamente en la Etapa 6: decides directamente si se te informa o no sobre la identidad de cada grupo cuando estés en la Etapa 6.'),
+            ('c', 'c) Nos vas a decir si quieres que te revelemos la identidad de los grupos correspondientes a una decisión dependiendo de si tu puntaje en la prueba de asociación implícita cayó debajo, dentro o arriba del rango que consideras aceptable. '),
+            ],
+        blank=False,
+    )
+
+    comp_q5 = models.StringField(
+        label=(
+            '5. Supón que nos indicas que quieres que en la Etapa 6 te revelemos la identidad de los grupos A y B, y que no te revelemos la identidad de los grupos C y D. ¿Qué haríamos en la práctica?'
+        ),
+        choices=[
+            ('a', 'a) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D.'),
+            ('b', 'b) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la dentidad de los grupos C y D.'),
+            ('c', 'c) Te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D. '),
+            ('d', 'd) Te revelamos la identidad de los grupos A y B con 80% de probabilidad, y con 20% de probabilidad no te revelamos la identidad de los grupos A y B. No te revelamos la identidad de los grupos C y D con 80% de probabilidad, y con 20% de probabilidad sí te revelamos la identidad de los grupos C y D.'),
+        ],
+        blank=False,
+    )
+
+    comp_q6 = models.StringField(
+        label=(
+            '6. Escoge la opción correcta sobre tus decisiones en la Etapa 6.'
+        ),
+        choices=[
+            ('a', 'a) Ninguna decisión involucra a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y sólo vamos a incluir decisiones que no afecten a las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('b',
+             'b) No todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y es posible que incluyamos decisiones que no afecten a algunas de las personas sobre las que te preguntamos en la Etapa 2. '),
+            ('c',
+             'c) Todas las decisiones involucran a los grupos de personas sobre las que te preguntamos en las pruebas de la Etapa 2, y ninguna decisión van a incluir a grupos de personas sobre las que no te preguntamos en la Etapa 2. '),
+        ],
+
+        blank=False,
+    )
+
+    # ─── Cuestionario de comprensión 2────────────────────────────────────
+    comp_q1_2 = models.StringField(
+        label=(
+            '1. ¿dssadas de las siguientes opciones describe correctamente las acciones disponibles para un participante una vez que se formó su grupo en el experimento?'
+        ),
+        choices=[
+            ('a',
+             'a) Escoger qué opinión expresarle a los demás en el grupo. Decidir si dar o quitar dinero a cada uno de los miembros. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('b',
+             'b) Escoger qué opinión expresarle a los demás en el grupo. Adivinar si la opinión que los demás mimebros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('c',
+             'c) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivinar si la opinión que los demás miembros te expresaron es la misma que expresaron en privado. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('d',
+             'd) Escoger qué opinión expresarle a los demás en el grupo. Entre quienes pagaron cinco pesos por hacerlo decidir si dar o quitar dinero a cada uno de los demás miembros del grupo. Adivina el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.')
+        ],
+        blank=False,
+    )
+
+    comp_q2_2 = models.StringField(
+        label=(
+            '2. ¿Qué sucede si un participante decide pagar el costo (5 pesos) para darle o quitarle 20 pesos a los demás miembros de su grupo, y el participante decide quitarle 20 pesos a uno de ellos?'
+        ),
+        choices=[
+            ('a', 'a) El participante gana 20 pesos'),
+            ('b', 'b) El participante recupera los 5 pesos pagados y el otro miembro gana 20 pesos adicionales'),
+            ('c', 'c) Sólo el que paga pierde dinero; el otro miembro no gana ni pierde nada'),
+            ('d', 'd) El participante pierde 5 pesos y el otro miembro pierde 20 pesos')
+        ],
+        blank=False,
+    )
+
+    comp_q3_2 = models.StringField(
+        label=(
+            '3. Calcula la cantidad de dinero con la que termina el siguiente participante: <br>'
+            '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+            '  • Expresa su opinión privada ante el grupo y gana 10 pesos.<br>'
+            '  • Los otros miembros de su grupo deciden quitarle 20 pesos.<br>'
+            '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+            '  • Advinó incorrectamente si la opinión que le expresaron los demás miembros es igual a su opinión privada.<br>'
+        ),
+        choices=[
+            ('a', 'a) Termina con 25 pesos'),
+            ('b', 'b) Termina con -25 pesos. Es decir, acaba sin dinero.'),
+            ('c', 'c) Termina con 30 pesos'),
+            ('d', 'd) Termina con 45 pesos')
+        ],
+    )
+
+    comp_q4_2 = models.StringField(
+        label=(
+            '4. Caclula la cantidad de dinero con la que termina el siguiente participante: <br>'
+            '  • Paga el costo para decidir dar o quitar 20 pesos a cada miembro del grupo.<br>'
+            '  • Expresa la opinión alterna a su opinión privada.<br>'
+            '  • Los otros miembros no pagan el costo para decidir dar o quitar 20 pesos.<br>'
+            '  • Adivina correctamente el porcentaje de personas que expresaron una opinión diferente a su opinión privada en esas "conversaciónes", y recibe 10 pesos extra.<br>'
+            '  • Advina correctamente si la opinión que le expresaron los demás miembros es igual a su opinión privada, y recibe 10 pesos adicionales.<br>'
+        ),
+        choices=[
+            ('a', 'a) Termina con 40 pesos'),
+            ('b', 'b) Termina con 15 pesos'),
+            ('c', 'c) Termina con 65 pesos'),
+            ('d', 'd) Termina con 50 pesos'),
+        ],
+        blank=False,
+    )
+
+    comp_q5_2 = models.StringField(
+        label=(
+            '¿Cómo se crean los grupos de tres personas en el experimento?'
+        ),
+        choices=[
+            ('a', 'a) Según sus características personales (por ejemplo, edad o género)'),
+            ('b', 'b) Los participantes eligen libremente a los mimebros de su grupo'),
+            ('c', 'c) De forma totalmente aleatoria'),
+            ('d',
+             'd) Basándose en las opiniones privadas de los participantes sobre cada uno de los temas de la Parte 3 del experimento'),
+        ],
+        blank=False,
+    )
+
+    comp_q6_2 = models.StringField(
+        label=(
+            '6. ¿Qué es lo que cada participantes debe adivinar sobre los miembros de su grupo en este experimento?'
+        ),
+        choices=[
+            ('a', 'a) Si la opinión que los demás miembros le expresaron es la misma que expresaron en privado'),
+            ('b',
+             'b) La decisión que tomará cada uno de los mimebros sobre dar o quitar 20 pesos a los demás y si la opinión que los demás miembros le expresaron es la misma que expresaron en privado'),
+            ('c',
+             'c) Si la opinión que los demás miembros te expresaron es la misma que expresaron en privado y el porcentaje de gente que le expresaron a su grupo una opinión que no es su opinón privada.'),
+            ('d', 'd) Si la opinión que los demás miembros le expresaron es diferente a su opinión privada')
+        ],
+        blank=False,
+    )
+
+    comp_q7_2 = models.StringField(
+        label=(
+            '7. (Verdadero o Falso) Los participantes no sabrán quiénes son los demás miembros de cada grupo en los que estén.'
+        ),
+        choices=[
+            ('a',
+             'a) Verdadero: los participantes no sabrán quiénes son los demás miembros de cada grupo en los que estén.'),
+            ('b',
+             'b) Falso: los participantes sí sabrán quiénes son los demás miembros de cada grupo en los que estén.'),
+        ],
+        blank=False,
+    )
+
 
     iat1_self_assessment = models.StringField(
-        label="¿Cómo crees que te fue en el IAT de gato y perro?",
+        label="¿Cómo crees que te fue en el IAT de Personas obesas y Personas delgadas?",
+        choices=[
+        "Neutral",
+        "Leve: Personas delgadas+bueno, Personas obesas+malo",
+        "Moderada: Personas delgadas+bueno, Personas obesas+malo",
+        "Fuerte: Personas delgadas+bueno, Personas obesas+malo",
+        "Leve: Personas obesas+bueno, Personas delgadas+malo",
+        "Moderada: Personas obesas+bueno, Personas delgadas+malo",
+        "Fuerte: Personas obesas+bueno, Personas delgadas+malo",
+    ],
+        widget=widgets.RadioSelect
+    )
+
+    iat2_self_assessment = models.StringField(
+        label="¿Cómo crees que te fue en el IAT de Personas homosexuales y Personas heterosexuales?",
         choices=[
             "Neutral",
-            "Asociación leve a gato+feliz, perro+triste",
-            "Asociación leve a gato+triste, perro+feliz",
-            "Asociación moderada a gato+feliz, perro+triste",
-            "Asociación moderada a gato+triste, perro+feliz",
-            "Asociación fuerte a gato+feliz, perro+triste",
-            "Asociación fuerte a gato+triste, perro+feliz",
+            "Leve: Personas heterosexuales+bueno, Personas homosexuales+malo",
+            "Moderada: Personas heterosexuales+bueno, Personas homosexuales+malo",
+            "Fuerte: Personas heterosexuales+bueno, Personas homosexuales+malo",
+            "Leve: Personas homosexuales+bueno, Personas heterosexuales+malo",
+            "Moderada: Personas homosexuales+bueno, Personas heterosexuales+malo",
+            "Fuerte: Personas homosexuales+bueno, Personas heterosexuales+malo",
         ],
         widget=widgets.RadioSelect
     )
 
-    # Variables para el rango moralmente aceptable del IAT 1. nota: hay que cambiar esto para que vayan de -2 a 2.
+    # Variables para el rango moralmente aceptable del iat 1. nota: hay que cambiar esto para que vayan de -2 a 2.
     iat2_lower_limit = models.FloatField(
-        label="¿Cuál es el límite inferior del rango moralmente aceptable para el IAT negro blanco?",
+        label="¿Cuál es el límite inferior del rango aceptable para el IAT Personas homosexuales y Personas heterosexuales?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
     iat2_upper_limit = models.FloatField(
-        label="¿Cuál es el límite superior del rango moralmente aceptable para el IAT negro blanco?",
+        label="¿Cuál es el límite superior del rango aceptable para el IAT Personas homosexuales y Personas heterosexuales?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
-    # Variables para el rango moralmente aceptable del IAT 2
+    # Variables para el rango moralmente aceptable del iat 2
     iat1_lower_limit = models.FloatField(
-        label="¿Cuál es el límite inferior del rango moralmente aceptable para el IAT gato perro?",
+        label="¿Cuál es el límite inferior del rango aceptable para el IAT Personas obesas y Personas delgadas?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
     iat1_upper_limit = models.FloatField(
-        label="¿Cuál es el límite superior del rango moralmente aceptable para el IAT gato perro?",
+        label="¿Cuál es el límite superior del rango aceptable para el IAT Personas obesas y Personas delgadas?",
         help_text="Debe estar entre -2 y 2.",
         min=-2,
         max=2
     )
 
-    iat1_probability = models.IntegerField(
-        label="Indica la probabilidad con la que se te revelará información de tu IAT gato perro si tu puntuación está dentro del rango moralmente aceptable:",
-        choices=[[80, "80"], [20, "20"]],
+    iat2_probability_right = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "homosexuales y el otro grupo es una o más personas heterosexuales. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente homosexual y heterosexual "
+            "cae por arriba del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        blank=True
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los homosexuales y el grupo B son los heterosexuales, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
     )
 
-    iat1_probability_out_of_range = models.IntegerField(
-        label="Indica la probabilidad con la que se te revelará información de tu IAT gato perro si tu puntuación está fuera del rango moralmente aceptable:",
-        choices=[[80, "80"], [20, "20"]],
+    iat1_probability_left = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "obesas y el otro grupo es una o más personas delgadas. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente gorda y delgada "
+            "cae por debajo del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        blank=True
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
     )
 
-    iat2_probability = models.IntegerField(
-        label="Indica la probabilidad con la que se te revelará información de tu IAT negro blanco si tu puntuación está dentro del rango moralmente aceptable:",
-        choices=[[80, "80"], [20, "20"]],
+    iat2_probability_left = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "homosexuales y el otro grupo es una o más personas heterosexuales. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente homosexual y heterosexual "
+            "cae por debajo del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        blank=True
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los homosexuales y el grupo B son los heterosexuales, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
     )
 
-    iat2_probability_out_of_range = models.IntegerField(
-        label="Indica la probabilidad con la que se te revelará información de tu IAT negro blanco si tu puntuación está fuera del rango moralmente aceptable:",
-        choices=[[80, "80"], [20, "20"]],
+    iat1_probability_right = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "obesas y el otro grupo es una o más personas delgadas. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente gorda y delgada "
+            "cae por arriba del rango que consideras aceptable. ¿Qué prefieres?"
+        ),
         widget=widgets.RadioSelect,
-        blank=True
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat2_probability = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "homosexuales y el otro grupo es una o más personas heterosexuales. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente homosexual y heterosexual "
+            "cae en el rango que consideras aceptable. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los homosexuales y el grupo B son los heterosexuales, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "obesas y el otro grupo es una o más personas delgadas. Además supón "
+            "que tu puntaje en la prueba de asociación implícita con gente gorda y delgada "
+            "cae en el rango que consideras aceptable. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat2_probability_right2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability_left2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat2_probability_left2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability_right2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat2_probability2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
+    )
+
+    iat1_probability2 = models.BooleanField(
+        label=(
+            "Supón que en la Etapa 6 tomas una decisión con consecuencias monetarias "
+            "para el Grupo A y el Grupo B, donde uno de los grupos es una o más personas "
+            "gordas y el otro grupo es una o más personas delgadas. ¿Qué prefieres?"
+        ),
+        widget=widgets.RadioSelect,
+        choices=[
+            (True,
+             "Saber quiénes son del grupo A y quiénes son del grupo B (esto es, sabes si el grupo A son los gordos y el grupo B son los delgados, o al revés)."),
+            (False, "No saber quiénes son del grupo A y quiénes son del grupo B."),
+        ],
+        blank=True,
     )
 
     # Variables para capturar la asociación calculada (se asignan en DictatorIntroduction)
@@ -351,6 +946,16 @@ class Player(BasePlayer):
     # Nuevas variables para capturar si el iat del jugador está en su rango moralmente aceptable
     iat1_moral_range = models.BooleanField(blank=True)
     iat2_moral_range = models.BooleanField(blank=True)
+
+    # Nuevas variables para capturar si el iat del jugador está en su rango moralmente aceptable
+    iat1_moral_range_left = models.BooleanField(blank=True)
+    iat2_moral_range_left = models.BooleanField(blank=True)
+
+    # Nuevas variables para capturar si el iat del jugador está en su rango moralmente aceptable
+    iat1_moral_range_right = models.BooleanField(blank=True)
+    iat2_moral_range_right = models.BooleanField(blank=True)
+
+
 
     # campos para el juego del dictador.
     dictator_offer = models.CurrencyField(
@@ -386,31 +991,26 @@ def get_actual_iat_round(player: Player):
     return player.round_number
 
 
-def set_payoffs(group: Group):
-    """
-    Asigna los payoffs basados en la decisión del jugador.
-    El jugador mantiene 'kept' y asigna el resto a la categoría.
-    """
-    kept = group.kept
-    assigned = Constants.endowment - kept
+def set_payoffs(group: Group, player: Player):
+     """
+     Guarda la decisión del jugador activo sin sobrescribir
+     los payoffs de los demás participantes del mismo group.
+     """
+     kept = player.dictator_offer
 
-    # Validar que la asignación sea correcta
-    if assigned < 0 or kept < 0 or kept > Constants.endowment:
-        # Manejar errores: asignar valores predeterminados o lanzar excepciones
-        group.assigned = 0
-        group.kept = Constants.endowment
-    else:
-        group.assigned = assigned
+     # Ajustamos los campos del group (sirven solo como
+     # “pizarra” para esta ronda: está bien que se sobrescriban)
+     group.kept     = kept
+     group.assigned = Constants.endowment - kept
 
-    # Asignar el payoff al jugador (manteniendo 'kept')
-    for player in group.get_players():
-        player.payoff = kept
+     # El único payoff que cambiamos es el del jugador actual
+     player.payoff  = kept
 
 
 class Trial(ExtraModel):
     """A record of single iteration
     Keeps corner categories from round setup to simplify furher analysis.
-    The stimulus class is for appropriate styling on page.   
+    The stimulus class is for appropriate styling on page.
     """
 
     player = models.Link(Player)
@@ -504,38 +1104,34 @@ def custom_export(players):
 
     ]
     for p in players:
-        if p.round_number not in (3, 4, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18):
+        if p.round_number not in (3, 4, 6, 7, 10, 11, 13, 14, 15, 16):
             continue
-        participant = p.participant
-        session = p.session
-        subsession = p.subsession
-        group = p.group
-        for z in Trial.filter(player=p):
+        sess = p.session
+        part = p.participant
+        for t in Trial.filter(player=p):
+            rnd = p.round_number
+            pv = part.vars
             yield [
-                session.code,
-                participant.code,
-                subsession.round_number,
-                subsession.primary_left,
-                subsession.primary_right,
-                subsession.secondary_left,
-                subsession.secondary_right,
-                z.iteration,
-                z.timestamp,
-                z.stimulus_cls,
-                z.stimulus_cat,
-                z.stimulus,
-                z.correct,
-                z.response,
-                z.is_correct,
-                z.reaction_time,
-                p.dictator_category,
-                p.dictator_offer,
-                group.kept,
-                group.dictator_category,
-                group.assigned,
-                p.payoff,
+                sess.code,
+                part.code,
+                rnd,
+                t.iteration,
+                t.timestamp,
+                t.stimulus_cls,
+                t.stimulus_cat,
+                t.stimulus,
+                t.correct,
+                t.response,
+                t.is_correct,
+                t.reaction_time,
+                # Leemos de participant.vars:
+                pv.get(f'cat_r{rnd}'),
+                pv.get(f'dictator_offer_r{rnd}'),
+                pv.get(f'kept_r{rnd}'),
+                pv.get(f'assigned_r{rnd}'),
+                pv.get(f'payoff_r{rnd}'),
+                # ... (más campos IAT si los deseas) ...
             ]
-
 
 def play_game(player: Player, message: dict):
     try:
@@ -626,9 +1222,16 @@ def play_game(player: Player, message: dict):
 
 
 # PAGES
+# sobre los cambios del 25 de mayo del 2025: pre-correr el experimento: pensé que tenía que agregar muchas rondas para las instrucciones nuevas, pero simplemente
+# puedo agregar páginas para que se muestren en un orden que tenga sentido. Qué tranquilidad.
+
+
+
+
+
 class Intro(Page):
     # comentario en caso de ser necesario: cambié está página para que se
-    # pudiera mostrar los labels correctos de inicios del IAT, pero causó un
+    # pudiera mostrar los labels correctos de inicios del iat, pero causó un
     # problema con el primer intento, si esto vuelve a suceder, regresar al
     # sigueiente código:
     #     @staticmethod
@@ -683,7 +1286,7 @@ class RoundN(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        # Mostrar solo en rondas de IAT
+        # Mostrar solo en rondas de iat.
         return player.round_number <= 14
 
     @staticmethod
@@ -721,33 +1324,29 @@ class RoundN(Page):
 
 class UserInfo(Page):
     form_model = 'player'
-    form_fields = ['name', 'age', 'sports', 'random_number']
+    form_fields = ['edad', 'sexo', 'ha_participado', 'num_experimentos']
 
     @staticmethod
     def is_displayed(player):
-        # Mostrar esta página solo una vez por participante
-        return player.participant.vars.get('user_info_completed', False) == False
+        return not player.participant.vars.get('user_info_completed', False)
+
+    @staticmethod
+    def error_message(player, values):
+        if values['ha_participado'] == 'Sí' and values['num_experimentos'] is None:
+            return "Por favor indica en cuántos experimentos has participado."
+
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # Guardar valores en participant.vars si deseas usarlos globalmente
         participant = player.participant
-        if not player.name:
-            player.name = "Anónimo"
-        if not player.age:
-            player.age = 18
-        if not player.sports:
-            player.sports = "Sin especificar"
-        if not player.random_number:
-            player.random_number = 0
-
-        # Marcar que la información ya fue recopilada
+        if player.ha_participado != 'Sí':
+            player.num_experimentos = 0
         participant.vars['user_info_completed'] = True
 
 
 class PreguntaM(Page):
     form_model = 'player'
-    form_fields = ['moral_question']
+    form_fields = ['preguntaM1', 'preguntaM2', 'preguntaM3', 'preguntaM4', 'preguntaM5', 'preguntaM6']
 
     @staticmethod
     def is_displayed(player):
@@ -761,20 +1360,227 @@ class PreguntaM(Page):
 
     @staticmethod
     def error_message(player, values):
-        # Validar que el campo moral_question no esté vacío
-        if not values.get('moral_question'):
-            return "Por favor, responde la pregunta antes de continuar."
+        # Validar que ninguno de los campos esté vacío
+        preguntas = ['preguntaM1', 'preguntaM2', 'preguntaM3', 'preguntaM4', 'preguntaM5', 'preguntaM6']
+        for p in preguntas:
+            if not values.get(p):
+                return "Por favor, responde todas las preguntas antes de continuar."
 #pie
 # acá el detalle es que las validaciones de los campos están mal, aunque fáciles de cambiar, no lo haré ahora. 4 de febrero del 2025.
+
+
+#### espacio para la página del cuestionario :
+
+from collections import OrderedDict
+
+class Comprehension(Page):
+    form_model = 'player'
+    form_fields = [
+        'comp_q1',
+        'comp_q2',
+        'stage_order',   # <-- aquí lo incluimos
+        'comp_q4',
+        'comp_q5',
+        'comp_q6',
+    ]
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        res, score = {}, 0
+        for f in Comprehension.form_fields:
+            given = getattr(player, f)
+            correct = Constants.CORRECT_ANSWERS[f]
+
+            # ---------- determinar si acertó ----------
+            if f == 'stage_order':
+                given_list = [s.strip() for s in (given or '').splitlines() if s.strip()]
+                correct_list = [s.strip() for s in correct.splitlines()]
+                ok = (given_list == correct_list)
+            else:
+                ok = (given == correct)
+
+            # ---------- label legible que el usuario marcó ----------
+            if f == 'stage_order':
+                given_label = " → ".join(given_list) if given else "(vacío)"
+            else:
+                # convierte QUESTION_OPTIONS en dict {valor: texto}
+                opts_dict = OrderedDict(Constants.QUESTION_OPTIONS[f])
+                given_label = opts_dict.get(given, "(sin marcar)")
+
+            res[f] = dict(
+                text=Constants.QUESTION_TEXT[f],
+                given=given,  # letra o texto crudo
+                given_label=given_label,  # texto legible
+                correct=correct,
+                ok=ok,
+                options=Constants.QUESTION_OPTIONS.get(f, []),
+                explanation=Constants.CORRECT_EXPLANATIONS[f],
+            )
+            score += ok
+
+        player.participant.vars.update(comp_results=res, comp_score=score)
+        player.participant.vars['compr1_shown'] = True
+
+
+    @staticmethod
+    def is_displayed(player):
+        return (
+            player.participant.vars.get('iat_round_order') == list(range(1, 15))
+            and not player.participant.vars.get('compr1_shown', False)
+        )
+
+    @staticmethod
+    def vars_for_template(player):
+        etapas = [
+            "Sociodemográfica",
+            "Pruebas de asociación implícita",
+            "Adivinas tus puntajes en las pruebas de la Etapa 2",
+            "Rango aceptable de puntajes en las pruebas de la Etapa 2",
+            "Qué información revelar en las decisiones de la Etapa 6",
+            "Decisiones monetarias que pueden afectar a grupos de la Etapa 2",
+        ]
+        random.shuffle(etapas)
+        return dict(etapas_aleatorias=etapas)
+
+class ComprehensionFeedback(Page):
+    @staticmethod
+    def vars_for_template(player):
+        # 1) Sacamos los resultados y al mismo tiempo los 'poppeamos'
+        #    para que no queden en player.participant.vars
+        results = player.participant.vars.pop('comp_results', {})
+
+        # 2) Recuperamos el score (no habrá sido 'popped')
+        score = player.participant.vars.get('comp_score', 0)
+
+        return dict(
+            results=results,
+            score=score,
+            total=len(Constants.CORRECT_ANSWERS),
+        )
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            player.participant.vars.get('iat_round_order', []) == list(range(1, 15))
+            and not player.participant.vars.get('feedback1_shown', False)
+        )
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        # Aquí marcamos que ya mostramos feedback, para que is_displayed pase a False
+        player.participant.vars['feedback1_shown'] = True
+
+class Comprehension2(Page):
+    form_model = 'player'
+    form_fields = list(Constants.CORRECT_ANSWERS2.keys())
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        res, score = {}, 0
+        for f in Constants.CORRECT_ANSWERS2:
+            given   = getattr(player, f)
+            correct = Constants.CORRECT_ANSWERS2[f]
+            ok      = given == correct
+            res[f] = dict(
+            text    = Constants.QUESTION_TEXT2[f],  # enunciado completo (HTML)
+            given   = str(given),          # lo que marcó el participante
+            correct = str(correct),        # clave correcta
+            ok      = ok,                  # booleano
+)
+            score += ok
+        # SOLO datos primitivos → siempre json-/pickle-safe
+        player.participant.vars.update(comp_results=res, comp_score=score)
+        player.participant.vars['compr2_shown'] = True
+
+
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            player.participant.vars.get('iat_round_order')
+                == (list(range(8, 15)) + list(range(1, 8)))
+            and not player.participant.vars.get('compr2_shown', False)
+        )
+
+
+class ComprehensionFeedback2(Page):
+    @staticmethod
+    def vars_for_template(player):
+        results = player.participant.vars['comp_results']
+        score   = player.participant.vars['comp_score']
+
+        for fname, info in results.items():
+            info['options']     = Constants.QUESTION_OPTIONS2[fname]
+            info['explanation'] = Constants.CORRECT_EXPLANATIONS2[fname]
+
+        return dict(
+            results=results,
+            score=score,
+            total=len(Constants.CORRECT_ANSWERS2),
+        )
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+                player.participant.vars.get('iat_round_order', [])
+                == (list(range(8, 15)) + list(range(1, 8)))
+                and not player.participant.vars.get('feedback2_shown', False)
+        )
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        player.participant.vars['feedback2_shown'] = True
+
+class InstruccionesGenerales1(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            player.participant.vars.get('iat_round_order') == list(range(1, 15))
+            and not player.participant.vars.get('user_generales1_completed', False)
+        )
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        player.participant.vars['user_generales1_completed'] = True
+
+
+class InstruccionesGenerales2(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return (
+            player.participant.vars.get('iat_round_order')
+                == (list(range(8, 15)) + list(range(1, 8)))
+            and not player.participant.vars.get('user_generales2_completed', False)
+        )
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        player.participant.vars['user_generales2_completed'] = True
+
+class InstruccionesGenerales3(Page):
+    @staticmethod
+    def is_displayed(player):
+        return (
+            player.participant.vars.get('user_generales2_completed', False)
+            and not player.participant.vars.get('user_generales3_completed', False)
+        )
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        player.participant.vars['user_generales3_completed'] = True
+
+
+
+# creo que hay el grave problema (no tan grave) que cambié algo de la sinxtaxis y ahora solamente permite guess neutral
 class IATAssessmentPage(Page):
     form_model = 'player'
     form_fields = [
         'iat1_self_assessment',
         'iat2_self_assessment',
-        'iat2_lower_limit',  # Límite inferior para el IAT negro blanco
-        'iat2_upper_limit',  # Límite superior para el IAT negro blanco
-        'iat1_lower_limit',  # Límite inferior para el IAT blanco negro
-        'iat1_upper_limit'  # Límite superior para el IAT blanco negro
+        'iat2_lower_limit',  # Límite inferior para el iat negro blanco
+        'iat2_upper_limit',  # Límite superior para el iat negro blanco
+        'iat1_lower_limit',  # Límite inferior para el iat blanco negro
+        'iat1_upper_limit'  # Límite superior para el iat blanco negro
     ]
 
     @staticmethod
@@ -800,14 +1606,14 @@ class IATAssessmentPage(Page):
             ]
             return [t.reaction_time for t in trials]
 
-        # Extraer datos para el primer IAT (rondas 3, 4, 6, 7)
+        # Extraer datos para el primer iat (rondas 3, 4, 6, 7)
         data3 = extract(3)
         data4 = extract(4)
         data6 = extract(6)
         data7 = extract(7)
         dscore1_result = dscore1(data3, data4, data6, data7)
 
-        # Extraer datos para el segundo IAT (rondas 10, 13, 11, 14)
+        # Extraer datos para el segundo iat (rondas 10, 13, 11, 14)
         data10 = extract(10)
         data13 = extract(13)
         data11 = extract(11)
@@ -833,43 +1639,43 @@ class IATAssessmentPage(Page):
                 return "Neutral"
             if dscore < 0:
                 if -0.35 <= dscore <= -0.15:
-                    if category == "gato/perro":
-                        return "Leve: perro positivo, gato negativo"
-                    else:  # white/black
-                        return "Leve: black positivo, white negativo"
+                    if category == "Personas obesas/Personas delgadas":
+                        return "Leve: Personas delgadas+bueno, Personas obesas+malo"
+                    else:  # Personas homosexuales/Personas heterosexuales
+                        return "Leve: Personas heterosexuales+bueno, Personas homosexuales+malo"
                 elif -0.65 <= dscore < -0.35:
-                    if category == "gato/perro":
-                        return "Moderada: perro positivo, gato negativo"
+                    if category == "Personas obesas/Personas delgadas":
+                        return "Moderada: Personas delgadas+bueno, Personas obesas+malo"
                     else:
-                        return "Moderada: black positivo, white negativo"
+                        return "Moderada: Personas heterosexuales+bueno, Personas homosexuales+malo"
                 elif -2 <= dscore < -0.65:
-                    if category == "gato/perro":
-                        return "Fuerte: perro positivo, gato negativo"
+                    if category == "Personas obesas/Personas delgadas":
+                        return "Fuerte: Personas delgadas+bueno, Personas obesas+malo"
                     else:
-                        return "Fuerte: black positivo, white negativo"
+                        return "Fuerte: Personas heterosexuales+bueno, Personas homosexuales+malo"
             else:  # dscore > 0
                 if 0.15 <= dscore <= 0.35:
-                    if category == "gato/perro":
-                        return "Leve: gato positivo, perro negativo"
+                    if category == "Personas obesas/Personas delgadas":
+                        return "Leve: Personas obesas+bueno, Personas delgadas+malo"
                     else:
-                        return "Leve: white positivo, black negativo"
+                        return "Leve: Personas homosexuales+bueno, Personas heterosexuales+malo"
                 elif 0.35 < dscore <= 0.65:
-                    if category == "gato/perro":
-                        return "Moderada: gato positivo, perro negativo"
+                    if category == "Personas obesas/Personas delgadas":
+                        return "Moderada: Personas obesas+bueno, Personas delgadas+malo"
                     else:
-                        return "Moderada: white positivo, black negativo"
+                        return "Moderada: Personas homosexuales+bueno, Personas heterosexuales+malo"
                 elif 0.65 < dscore <= 2:
-                    if category == "gato/perro":
-                        return "Fuerte: gato positivo, perro negativo"
+                    if category == "Personas obesas/Personas delgadas":
+                        return "Fuerte: Personas obesas+bueno, Personas delgadas+malo"
                     else:
-                        return "Fuerte: white positivo, black negativo"
+                        return "Fuerte: Personas homosexuales+bueno, Personas heterosexuales+malo"
             return "Sin clasificación"
 
         # Se asigna la asociación de forma fija:
-        # - IAT1 corresponde siempre a "gato/perro"
-        # - IAT2 corresponde siempre a "white/black"
-        player.iat1_association = clasificar(player.dscore1, "gato/perro")
-        player.iat2_association = clasificar(player.dscore2, "white/black")
+        # - iat1 corresponde siempre a "Personas obesas/Personas delgadas"
+        # - iat2 corresponde siempre a "Personas homosexuales/Personas heterosexuales"
+        player.iat1_association = clasificar(player.dscore1, "Personas obesas/Personas delgadas")
+        player.iat2_association = clasificar(player.dscore2, "Personas homosexuales/Personas heterosexuales")
 
         return dict(
             category=category,
@@ -881,51 +1687,6 @@ class IATAssessmentPage(Page):
         )
 
     @staticmethod
-    def convert_computed(association: str, category: str) -> str:
-        """
-        Convierte el string de asociación calculado al formato de las opciones de la autoevaluación.
-
-        Para "white/black":
-            - "white positivo" se convierte en "blanco+feliz"
-            - "black negativo" se convierte en "negro+triste"
-            - "black positivo" se convierte en "negro+feliz"
-            - "white negativo" se convierte en "blanco+triste"
-
-        Para "gato/perro":
-            - "gato positivo" se convierte en "gato+feliz"
-            - "perro negativo" se convierte en "perro+triste"
-            - "perro positivo" se convierte en "perro+feliz"
-            - "gato negativo" se convierte en "gato+triste"
-
-        Además, transforma el prefijo:
-            - "Leve: "    → "Asociación leve a "
-            - "Moderada: " → "Asociación moderada a "
-            - "Fuerte: "   → "Asociación fuerte a "
-        """
-        if association == "Neutral":
-            return "Neutral"
-        if association.startswith("Leve: "):
-            prefix, rest = "Asociación leve a ", association[len("Leve: "):]
-        elif association.startswith("Moderada: "):
-            prefix, rest = "Asociación moderada a ", association[len("Moderada: "):]
-        elif association.startswith("Fuerte: "):
-            prefix, rest = "Asociación fuerte a ", association[len("Fuerte: "):]
-        else:
-            prefix, rest = "", association
-
-        if category == "white/black":
-            rest = rest.replace("white positivo", "blanco+feliz") \
-                .replace("black negativo", "negro+triste") \
-                .replace("black positivo", "negro+feliz") \
-                .replace("white negativo", "blanco+triste")
-        elif category == "gato/perro":
-            rest = rest.replace("gato positivo", "gato+feliz") \
-                .replace("perro negativo", "perro+triste") \
-                .replace("perro positivo", "perro+feliz") \
-                .replace("gato negativo", "gato+triste")
-        return prefix + rest
-
-    @staticmethod
     def before_next_page(player: Player, timeout_happened):
         participant = player.participant
 
@@ -935,63 +1696,120 @@ class IATAssessmentPage(Page):
         if not player.iat2_self_assessment:
             player.iat2_self_assessment = "No especificado"
 
-        # Marcar que la evaluación del IAT ya fue completada
+        # Marcar que la evaluación del iat ya fue completada
         participant.vars['iat_assessment_completed'] = True
 
         # Se convierte la asociación calculada al formato de las opciones
         # Fijamos:
-        # • IAT1 (gato y perro) se compara con player.iat1_association
-        # • IAT2 (blanco y negro) se compara con player.iat2_association
-        expected_iat1 = IATAssessmentPage.convert_computed(player.iat1_association, "gato/perro")
-        expected_iat2 = IATAssessmentPage.convert_computed(player.iat2_association, "white/black")
+        # • iat1 (gato y perro) se compara con player.iat1_association
+        # • iat2 (blanco y negro) se compara con player.iat2_association
+        expected_iat1 = player.iat1_association
+        expected_iat2 = player.iat2_association
 
         player.iat1_guess_correct = (player.iat1_self_assessment == expected_iat1)
         player.iat2_guess_correct = (player.iat2_self_assessment == expected_iat2)
 
+        # Validación de los rangos morales para iat 1 y iat 2
         iat1_moral_range = (
                 player.dscore1 >= player.iat1_lower_limit and
                 player.dscore1 <= player.iat1_upper_limit
         )
+
         iat2_moral_range = (
                 player.dscore2 >= player.iat2_lower_limit and
                 player.dscore2 <= player.iat2_upper_limit
         )
 
-        # asignaciones de las variables.
+        # Validación de los rangos para iat 1 y iat 2 en el rango izquierdo
+        iat1_moral_range_left = (
+                player.dscore1 < player.iat1_lower_limit
+        )
+
+        iat2_moral_range_left = (
+                player.dscore2 < player.iat2_lower_limit
+        )
+
+        # Validación de los rangos para iat 1 y iat 2 en el rango derecho
+        iat1_moral_range_right = (
+                player.dscore1 > player.iat1_upper_limit
+        )
+
+        iat2_moral_range_right = (
+                player.dscore2 > player.iat2_upper_limit
+        )
+
+        # Asignación de las variables al jugador
         player.iat1_moral_range = iat1_moral_range
         player.iat2_moral_range = iat2_moral_range
+        player.iat1_moral_range_left = iat1_moral_range_left
+        player.iat2_moral_range_left = iat2_moral_range_left
+        player.iat1_moral_range_right = iat1_moral_range_right
+        player.iat2_moral_range_right = iat2_moral_range_right
 
-        # Imprimir en consola las asociaciones correctas y las respuestas del usuario
-        # print("ahora, test del programa:")
-        # print("Asociación IAT1 (gato/perro) esperada:", expected_iat1)
-        # print("Asociación IAT1 (gato/perro) ingresada por el usuario:", player.iat1_self_assessment)
-        # print("Asociación IAT2 (blanco/negro) esperada:", expected_iat2)
-        # print("Asociación IAT2 (blanco/negro) ingresada por el usuario:", player.iat2_self_assessment)
-        #
-        # print("Resultado de la adivinanza IAT1 (gato/perro):", player.iat1_guess_correct)
-        # print("Resultado de la adivinanza IAT2 (blanco/negro):", player.iat2_guess_correct)
-        #
-        # print("¿el IAT negro blanco está dentro del rango moral del jugador?", player.iat2_moral_range)
-        # print("¿el IAT gato perro está dentro del rango moral del jugador?", player.iat1_moral_range)
+        # iatAssessmentPage.before_next_page
+        participant.vars['iat1_moral_range'] = player.iat1_moral_range
+        participant.vars['iat2_moral_range'] = player.iat2_moral_range
+        participant.vars['iat1_moral_range_left'] = player.iat1_moral_range_left
+        participant.vars['iat1_moral_range_right'] = player.iat1_moral_range_right
+        participant.vars['iat2_moral_range_left'] = player.iat2_moral_range_left
+        participant.vars['iat2_moral_range_right'] = player.iat2_moral_range_right
+
+        # Configuración del logger
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+        # Registrar las asociaciones correctas y las respuestas del usuario
+        logging.info("Asociación iat1 (Personas obesas/Personas delgadas) esperada: %s", expected_iat1)
+        logging.info("Asociación iat1 (Personas obesas/Personas delgadas) ingresada por el usuario: %s",
+                     player.iat1_self_assessment)
+        logging.info("Asociación iat2 (Personas homosexuales/Personas heterosexuales) esperada: %s", expected_iat2)
+        logging.info("Asociación iat2 (Personas homosexuales/Personas heterosexuales) ingresada por el usuario: %s",
+                     player.iat2_self_assessment)
+
+        logging.info("Resultado de la adivinanza iat1 (Personas obesas/Personas delgadas): %s",
+                     player.iat1_guess_correct)
+        logging.info("Resultado de la adivinanza iat2 (Personas homosexuales/Personas heterosexuales): %s",
+                     player.iat2_guess_correct)
+
+        logging.info("¿El iat Personas obesas/Personas delgadas está dentro del rango moral del jugador? %s",
+                     player.iat1_moral_range)
+        logging.info(
+            "¿El iat Personas homosexuales/Personas heterosexuales está dentro del rango moral del jugador? %s",
+            player.iat2_moral_range)
+
+        # Logs adicionales para especificar si el iat está a la izquierda, derecha o en el rango
+        if iat1_moral_range:
+            logging.info("El iat1 (Personas obesas/Personas delgadas) está dentro del rango moral.")
+        elif iat1_moral_range_left:
+            logging.info("El iat1 (Personas obesas/Personas delgadas) está a la izquierda del rango moral.")
+        else:
+            logging.info("El iat1 (Personas obesas/Personas delgadas) está a la derecha del rango moral.")
+
+        if iat2_moral_range:
+            logging.info("El iat2 (Personas homosexuales/Personas heterosexuales) está dentro del rango moral.")
+        elif iat2_moral_range_left:
+            logging.info("El iat2 (Personas homosexuales/Personas heterosexuales) está a la izquierda del rango moral.")
+        else:
+            logging.info("El iat2 (Personas homosexuales/Personas heterosexuales) está a la derecha del rango moral.")
+
 
     @staticmethod
     def error_message(player, values):
         if not values.get('iat1_self_assessment'):
-            return "Por favor, selecciona una opción para el IAT de gato y perro."
+            return "Por favor, selecciona una opción para el iat de Personas obesas y Personas delgadas."
         if not values.get('iat2_self_assessment'):
-            return "Por favor, selecciona una opción para el IAT de blanco y negro."
+            return "Por favor, selecciona una opción para el iat de Personas homosexuales y Personas heterosexuales."
         if values.get('iat2_lower_limit') is None:
-            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del IAT negro blanco."
+            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del iat de Personas homosexuales y Personas heterosexuales."
         if values.get('iat2_upper_limit') is None:
-            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del IAT negro blanco."
+            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del iat de Personas homosexuales y Personas heterosexuales."
         if values['iat2_lower_limit'] >= values['iat2_upper_limit']:
-            return "El límite inferior para el IAT negro blanco debe ser menor que el límite superior."
+            return "El límite inferior para el iat de Personas homosexuales y Personas heterosexuales debe ser menor que el límite superior."
         if values.get('iat1_lower_limit') is None:
-            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del IAT blanco negro."
+            return "Por favor, ingresa un límite inferior para el rango moralmente aceptable del iat de Personas obesas y Personas delgadas."
         if values.get('iat1_upper_limit') is None:
-            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del IAT blanco negro."
+            return "Por favor, ingresa un límite superior para el rango moralmente aceptable del iat de Personas obesas y Personas delgadas."
         if values['iat1_lower_limit'] >= values['iat1_upper_limit']:
-            return "El límite inferior para el IAT blanco negro debe ser menor que el límite superior."
+            return "El límite inferior para el iat de Personas obesas y Personas delgadas debe ser menor que el límite superior."
 
 
 # si Mauricio dice que quiere que el recordatorio se haga entre cada pregunta, tengo que dejar de usar formfields y crer
@@ -1000,32 +1818,108 @@ class MoralDecisionPageCerteza(Page):
     form_model = 'player'
     form_fields = [
         'iat1_probability',
-        'iat1_probability_out_of_range',
         'iat2_probability',
-        'iat2_probability_out_of_range'
     ]
-
     # aquí puedo considerar agregar validaciones al formulario para que el usuario no pueda agregar puntuaciones muy pequeñas al programa, con muchos números.
 
     @staticmethod
-    def is_displayed(player):
-        return player.round_number == 15
+    def error_message(player, values):
+        errors = {}
+        for field in MoralDecisionPageCerteza.form_fields:
+            # Checa None o cadena vacía
+            if values.get(field) in (None, ''):
+                errors[field] = 'Por favor completa este campo antes de continuar.'
+        return errors or None
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Only show to participants with iat order 1-14 and not shown yet
+        return (
+                player.round_number == 15 and
+                player.participant.vars.get('iat_round_order') == list(range(1, 15))
+                and not player.participant.vars.get('certeza_shown', False)
+        )
 
     @staticmethod
     def vars_for_template(player):
+        iat1_moral_range = player.dscore1 >= player.iat1_lower_limit and player.dscore1 <= player.iat1_upper_limit
+        iat2_moral_range = player.dscore2 >= player.iat2_lower_limit and player.dscore2 <= player.iat2_upper_limit
+
         return {
+            'iat1_moral_range': iat1_moral_range,
+            'iat2_moral_range': iat2_moral_range,
             'iat1_lower_limit': player.iat1_lower_limit,
             'iat1_upper_limit': player.iat1_upper_limit,
             'iat2_lower_limit': player.iat2_lower_limit,
             'iat2_upper_limit': player.iat2_upper_limit,
         }
 
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        part = player.participant
+        part.vars['iat1_probability']        = player.iat1_probability
+        part.vars['iat2_probability']        = player.iat2_probability
+
+class MoralDecisionPageCerteza2(Page):
+    form_model = 'player'
+    form_fields = [
+        'iat1_probability2',
+        'iat2_probability2',
+        'iat1_probability_left2',
+        'iat2_probability_left2',
+        'iat1_probability_right2',
+        'iat2_probability_right2',
+    ]
+    # aquí puedo considerar agregar validaciones al formulario para que el usuario no pueda agregar puntuaciones muy pequeñas al programa, con muchos números.
+    @staticmethod
+    def error_message(player, values):
+        errors = {}
+        for field in MoralDecisionPageCerteza2.form_fields:
+            # Checa None o cadena vacía
+            if values.get(field) in (None, ''):
+                errors[field] = 'Por favor completa este campo antes de continuar.'
+        return errors or None
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Show to participants with the alternate iat order and not shown yet
+        alternate_order = list(range(8, 15)) + list(range(1, 8))
+        return (
+            player.round_number == 15 and
+            player.participant.vars.get('iat_round_order') == alternate_order
+            and not player.participant.vars.get('certeza2_shown', False)
+        )
+
+    @staticmethod
+    def vars_for_template(player):
+        iat1_moral_range = player.dscore1 >= player.iat1_lower_limit and player.dscore1 <= player.iat1_upper_limit
+        iat2_moral_range = player.dscore2 >= player.iat2_lower_limit and player.dscore2 <= player.iat2_upper_limit
+
+        return {
+            'iat1_moral_range': iat1_moral_range,
+            'iat2_moral_range': iat2_moral_range,
+            'iat1_lower_limit': player.iat1_lower_limit,
+            'iat1_upper_limit': player.iat1_upper_limit,
+            'iat2_lower_limit': player.iat2_lower_limit,
+            'iat2_upper_limit': player.iat2_upper_limit,
+        }
+
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        part = player.participant
+        part.vars['iat1_probability2']        = player.iat1_probability2
+        part.vars['iat2_probability2']        = player.iat2_probability2
+        part.vars['iat1_probability_left2']   = player.iat1_probability_left2
+        part.vars['iat2_probability_left2']   = player.iat2_probability_left2
+        part.vars['iat1_probability_right2']  = player.iat1_probability_right2
+        part.vars['iat2_probability_right2']  = player.iat2_probability_right2
 
 # queda por introducir la función que propuse para esta clase, está en esta página: https://chatgpt.com/g/g-p-6770700264fc81918f62555c338c6f02-literature-review-iat/c/67a0f18e-087c-800c-966d-f4186e249d2e?model=o3-mini-high
 class DictatorIntroduction(Page):
     """
     Página de introducción al Juego del Dictador para la categoría asignada.
     """
+    template_name = 'iat/DictatorIntroduction.html'
 
     @staticmethod
     def is_displayed(player: Player):
@@ -1037,297 +1931,363 @@ class DictatorIntroduction(Page):
             endowment=Constants.endowment,
         )
 
+def _active_flags(moral_left, moral_right,
+                  p_in, p_left, p_right):
+    """
+    Devuelve los flags (p_in, p_left, p_right) que
+    corresponden al lado correcto.
+    """
+    if moral_left or moral_right:
+        # está fuera del rango: solo vale uno de los dos lados
+        p_left  = p_left  if moral_left  else False
+        p_right = p_right if moral_right else False
+    # dentro del rango (moral_range=True) dejamos p_in tal cual
+    return p_in, p_left, p_right
 
-# entonces, en la pagina anterior estoy calculando los dscores de los jugadores, hacerlos
-# en esta sección me permite que pueda acceder a estos valores dentro de las rondas.
+from typing import Optional
 
-# una propuesta para que aparezca con 80% de probabilidad está en el siguiente chat: https://chatgpt.com/g/g-p-6770700264fc81918f62555c338c6f02-literature-review-iat/c/67a3c2bd-eff0-800c-a2c7-2c3614ae93a7
+def _calc_threshold(
+    moral_range: Optional[bool],
+    p_in:         Optional[bool],
+    p_left:       Optional[bool],
+    p_right:      Optional[bool],
+) -> float:
+    """
+    Devuelve la probabilidad (0–1) de revelar la etiqueta explícita
+    según la preferencia declarada por el/la participante.
 
-# hace falta probar este caso, donde hago pruebas con la página que propuse para esta clase, el link es: https://chatgpt.com/g/g-p-6770700264fc81918f62555c338c6f02-literature-review-iat/c/67a64686-ecc0-800c-ac14-13e5f56b038e?model=o3-mini
+    • moral_range  == None  → 0.80  (no contestó su rango ⇒ asumimos “Sí”)
+    • moral_range  == True  → 0.80 si p_in   ∈ {None, True}; 0.20 si p_in is False
+    • moral_range  == False
+        – si existe p_right (caso “a la derecha”):
+              0.80 si p_right ∈ {None, True}; 0.20 si p_right is False
+        – si existe p_left  (caso “a la izquierda”):
+              0.80 si p_left  ∈ {None, True}; 0.20 si p_left  is False
+        – si ambos están None (no respondió ninguno) → 0.80
+    """
+    # Caso 1 : no respondió sus límites
+    if moral_range is None:
+        return 0.80
+
+    # Caso 2 : su d-score cayó *dentro* del rango aceptable
+    if moral_range:
+        return 0.80 if (p_in is None or p_in) else 0.20
+
+    # Caso 3 : su d-score cayó *fuera* del rango
+    # ——— a la derecha del rango
+    if p_right is not None:
+        return 0.80 if p_right else 0.20
+    # ——— a la izquierda del rango
+    if p_left is not None:
+        return 0.80 if p_left else 0.20
+    # Si no contestó ningún flag específico, asumimos “Sí”
+    return 0.80
+
+def split_groups(cat_string: str):
+    """
+    Devuelve los nombres de los grupos A y B a partir del string completo
+    de categoría (por ejemplo 'personas delgadas y personas obesas').
+
+    Si la categoría no coincide con los dos pares que manejamos,
+    regresa los nombres genéricos 'Grupo A' y 'Grupo B'.
+    """
+    cat_lower = (cat_string or "").lower()
+
+    if "personas delgadas" in cat_lower and "personas obesas" in cat_lower:
+        return Constants.PersonasDelgadas, Constants.PersonasObesas
+
+    if "personas heterosexuales" in cat_lower and "personas homosexuales" in cat_lower:
+        return Constants.PersonasHeterosexuales, Constants.PersonasHomosexuales
+
+    # Fallback genérico
+    return "Grupo A", "Grupo B"
+
+
 class DictatorOffer(Page):
-    """
-    Página donde el jugador decide cuánto mantener y cuánto asignar a la categoría.
-    """
-    form_model = 'group'
-    form_fields = ['kept']
+    form_model = 'player'
+    form_fields = ['dictator_offer']
+
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number in [15, 16, 17, 18]
-
-    @staticmethod
-    def vars_for_template(player: Player):
-        group = player.group
-        if group.dictator_category:
-            original_category = group.dictator_category.lower()
-            explicit_label = group.dictator_category.capitalize()
-        else:
-            original_category = ""
-            explicit_label = "Sin categoría asignada"
-
-        import random
-        display_label = explicit_label
-
-        # Usar participant.vars para almacenar los valores de forma persistente entre rondas.
-        part_vars = player.participant.vars
-
-        # Para IAT1: moral_range y probabilidades
-        if 'iat1_moral_range' not in part_vars:
-            part_vars['iat1_moral_range'] = player.field_maybe_none("iat1_moral_range")
-        iat1_moral_range = part_vars['iat1_moral_range']
-
-        if 'iat1_probability' not in part_vars:
-            part_vars['iat1_probability'] = player.field_maybe_none("iat1_probability")
-        iat1_probability = part_vars['iat1_probability']
-
-        if 'iat1_probability_out_of_range' not in part_vars:
-            part_vars['iat1_probability_out_of_range'] = player.field_maybe_none("iat1_probability_out_of_range")
-        iat1_probability_out_of_range = part_vars['iat1_probability_out_of_range']
-
-        # Para IAT2: moral_range y probabilidades
-        if 'iat2_moral_range' not in part_vars:
-            part_vars['iat2_moral_range'] = player.field_maybe_none("iat2_moral_range")
-        iat2_moral_range = part_vars['iat2_moral_range']
-
-        if 'iat2_probability' not in part_vars:
-            part_vars['iat2_probability'] = player.field_maybe_none("iat2_probability")
-        iat2_probability = part_vars['iat2_probability']
-
-        if 'iat2_probability_out_of_range' not in part_vars:
-            part_vars['iat2_probability_out_of_range'] = player.field_maybe_none("iat2_probability_out_of_range")
-        iat2_probability_out_of_range = part_vars['iat2_probability_out_of_range']
-
-        # Lógica para categorías 'perro' o 'gato'
-        if original_category in ['perro', 'gato']:
-            substitute_label = "animal"
-            if iat1_moral_range is None:
-                threshold = 0.8
-                debug_msg = ("DEBUG: iat1_moral_range es None. Probabilidad ingresada: None. "
-                             "Usando probabilidad por defecto del 80%.")
-            elif iat1_moral_range is True:
-                if iat1_probability is None:
-                    threshold = 0.8
-                    debug_msg = (
-                        "DEBUG: iat1_moral_range True, pero iat1_probability en blanco. Probabilidad ingresada: None. "
-                        "Usando probabilidad por defecto del 80%.")
-                else:
-                    threshold = iat1_probability / 100.0
-                    debug_msg = f"DEBUG: iat1_moral_range True. Probabilidad ingresada: {iat1_probability}%. Usando iat1_probability."
-            else:  # iat1_moral_range es False
-                if iat1_probability_out_of_range is None:
-                    threshold = 0.2
-                    debug_msg = (
-                        "DEBUG: iat1_moral_range False, pero iat1_probability_out_of_range en blanco. Probabilidad ingresada: None. "
-                        "Usando probabilidad por defecto del 20%.")
-                else:
-                    threshold = iat1_probability_out_of_range / 100.0
-                    debug_msg = f"DEBUG: iat1_moral_range False. Probabilidad ingresada: {iat1_probability_out_of_range}%. Usando iat1_probability_out_of_range."
-            rand_val = random.random()
-            if rand_val < threshold:
-                display_label = explicit_label
-            else:
-                display_label = substitute_label
-            # print(f"{debug_msg} Recordatorio: Se define el threshold como {threshold:.2f} "
-            #       f"(valor mínimo para elegir la etiqueta explícita). Valor aleatorio generado: {rand_val:.2f}. "
-            #       f"Resultado: {display_label}")
-
-        # Lógica para categorías 'blanco' o 'negro'
-        elif original_category in ['blanco', 'negro']:
-            substitute_label = "persona"
-            if iat2_moral_range is None:
-                threshold = 0.8
-                debug_msg = ("DEBUG: iat2_moral_range es None. Probabilidad ingresada: None. "
-                             "Usando probabilidad por defecto del 80%.")
-            elif iat2_moral_range is True:
-                if iat2_probability is None:
-                    threshold = 0.8
-                    debug_msg = (
-                        "DEBUG: iat2_moral_range True, pero iat2_probability en blanco. Probabilidad ingresada: None. "
-                        "Usando probabilidad por defecto del 80%.")
-                else:
-                    threshold = iat2_probability / 100.0
-                    debug_msg = f"DEBUG: iat2_moral_range True. Probabilidad ingresada: {iat2_probability}%. Usando iat2_probability."
-            else:  # iat2_moral_range es False
-                if iat2_probability_out_of_range is None:
-                    threshold = 0.2
-                    debug_msg = (
-                        "DEBUG: iat2_moral_range False, pero iat2_probability_out_of_range en blanco. Probabilidad ingresada: None. "
-                        "Usando probabilidad por defecto del 20%.")
-                else:
-                    threshold = iat2_probability_out_of_range / 100.0
-                    debug_msg = f"DEBUG: iat2_moral_range False. Probabilidad ingresada: {iat2_probability_out_of_range}%. Usando iat2_probability_out_of_range."
-            rand_val = random.random()
-            if rand_val < threshold:
-                display_label = explicit_label
-            else:
-                display_label = substitute_label
-            # print(f"{debug_msg} Recordatorio: Se define el threshold como {threshold:.2f} "
-            #       f"(valor mínimo para elegir la etiqueta explícita). Valor aleatorio generado: {rand_val:.2f}. "
-            #       f"Resultado: {display_label}")
-
-        player.participant.vars[f'visible_category_round_{player.round_number}'] = display_label
-        return dict(
-            category=display_label,
-            endowment=Constants.endowment,
+        rotated = list(range(1, 8)) + list(range(8, 15))
+        return (
+            player.round_number in (15, 16)
+            and player.participant.vars.get("iat_round_order") == rotated
         )
 
     @staticmethod
-    def error_message(player, values):
-        kept = values['kept']
-        if kept < 0 or kept > Constants.endowment:
+    def vars_for_template(player: Player):
+        import random
+
+        # Datos de la categoría y etiqueta explícita
+        original_category = player.group.dictator_category or ""
+        explicit_label = original_category.capitalize() if original_category else "Sin categoría asignada"
+
+        part_vars = player.participant.vars
+
+        # Selección del usuario
+        user_pref = part_vars.get('iat1_probability') if "delgadas" in original_category.lower() else part_vars.get('iat2_probability')
+
+        # Umbral según preferencia
+        threshold = 0.8 if user_pref else 0.2
+
+        # Generación de la probabilidad
+        rand_val = random.random()
+
+        # Decisión final
+        display_label = explicit_label if rand_val < threshold else "Miembro del grupo"
+
+        # DEBUG reducido
+        print(f"[DEBUG] user_pref={user_pref}, threshold={threshold}, rand_val={rand_val}, label={display_label}")
+
+        # Guardar para resultados
+        player.participant.vars[f"visible_category_round_{player.round_number}"] = display_label
+
+        # Nombres de grupos
+        group_a, group_b = split_groups(original_category)
+
+        return dict(
+            category=display_label,
+            endowment=Constants.endowment,
+            group_a=group_a,
+            group_b=group_b,
+        )
+
+    @staticmethod
+    def error_message(player: Player, values):
+        offer = values.get('dictator_offer')
+        if offer is None:
+            return "Por favor indica cuánto deseas ofrecer."
+        if offer < 0 or offer > Constants.endowment:
             return f"Por favor, ofrece una cantidad entre 0 y {Constants.endowment}."
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        group = player.group
-        set_payoffs(group)
+        # 1) Asignar al grupo y calcular payoff
+        # ahora basta con una sola llamada
+        set_payoffs(player.group, player)
+        # 2) Volcar TODO a participant.vars
+        rnd = player.round_number
+        pv = player.participant.vars
+        pv[f'dictator_offer_r{rnd}'] = player.dictator_offer
+        pv[f'kept_r{rnd}'] = player.group.kept
+        pv[f'assigned_r{rnd}'] = player.group.assigned
+        pv[f'payoff_r{rnd}'] = player.payoff
+        pv[f'cat_r{rnd}'] = player.group.dictator_category
+
+
+
+class DictatorOffer2(Page):
+    """
+    Página donde el jugador decide cuánto mantener y cuánto asignar a la categoría,
+    para quienes tienen el ordering invertido.
+    """
+    form_model = 'player'
+    form_fields = ['dictator_offer']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        alternate = list(range(8, 15)) + list(range(1, 8))
+        return (
+            player.round_number in (15, 16)
+            and player.participant.vars.get('iat_round_order') == alternate
+        )
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        import random
+
+        original = player.group.dictator_category or ""
+        explicit = original.capitalize() if original else "Sin categoría asignada"
+        pv = player.participant.vars
+        cat = original.lower()
+
+        # flags y rango según categoría
+        if "delgadas" in cat:
+            raw_in = pv.get("iat1_probability2")
+            raw_left = pv.get("iat1_probability_left2")
+            raw_right = pv.get("iat1_probability_right2")
+            mor_l = pv.get("iat1_moral_range_left")
+            mor_r = pv.get("iat1_moral_range_right")
+            mor = pv.get("iat1_moral_range")
+        else:
+            raw_in = pv.get("iat2_probability2")
+            raw_left = pv.get("iat2_probability_left2")
+            raw_right = pv.get("iat2_probability_right2")
+            mor_l = pv.get("iat2_moral_range_left")
+            mor_r = pv.get("iat2_moral_range_right")
+            mor = pv.get("iat2_moral_range")
+
+        # 1) posición del d-score
+        if mor is True:
+            position = "dentro del rango"
+        elif mor_l:
+            position = "a la izquierda del rango"
+        elif mor_r:
+            position = "a la derecha del rango"
+        else:
+            position = "sin rango definido"
+
+        # 2) aplicamos active_flags y 3) calculamos umbral
+        p_in, p_left, p_right = _active_flags(mor_l, mor_r, raw_in, raw_left, raw_right)
+        threshold = _calc_threshold(mor, p_in, p_left, p_right)
+
+        # 4) aleatorio y decisión
+        rv = random.random()
+        label = explicit if rv < threshold else "Miembro del grupo"
+
+        # DEBUG ampliado
+        print(
+            f"[DEBUG Offer2 ▶ rnd={player.round_number}] "
+            f"dscore {position}; "
+            f"raw_flags(in/left/right)={raw_in}/{raw_left}/{raw_right}; "
+            f"active_flags(in/left/right)={p_in}/{p_left}/{p_right}; "
+            f"threshold={threshold:.2f}; rand={rv:.2f} → '{label}'"
+        )
+
+        # guardamos y retornamos
+        pv[f"visible_category_round_{player.round_number}"] = {
+            "label": label,
+            "full_category": original
+        }
+        group_a, group_b = split_groups(original)
+        return dict(
+            category=label,
+            endowment=Constants.endowment,
+            group_a=group_a,
+            group_b=group_b,
+        )
+
+    @staticmethod
+    def error_message(player: Player, values):
+        offer = values.get('dictator_offer')
+        if offer is None:
+            return "Por favor indica cuánto deseas ofrecer."
+        if offer < 0 or offer > Constants.endowment:
+            return f"Por favor, ofrece una cantidad entre 0 y {Constants.endowment}."
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        player.group.kept = player.dictator_offer
+        set_payoffs(player.group)
+
+        rnd = player.round_number
+        pv = player.participant.vars
+        pv[f'dictator_offer_r{rnd}'] = player.dictator_offer
+        pv[f'kept_r{rnd}'] = player.group.kept
+        pv[f'assigned_r{rnd}'] = player.group.assigned
+        pv[f'payoff_r{rnd}'] = player.payoff
+        pv[f'cat_r{rnd}'] = player.group.dictator_category
 
 
 ## cometario random.
 
 class ResultsDictador(Page):
     @staticmethod
-    def is_displayed(player):
-        # Mostrar la página de resultados final solo en la última ronda (18)
-        return player.round_number == 18
+    def is_displayed(player: Player):
+        rotated = list(range(1, 8)) + list(range(8, 15))
+        return (
+            player.round_number == 16
+            and player.participant.vars.get("iat_round_order") == rotated
+        )
 
     @staticmethod
     def vars_for_template(player: Player):
         dictator_offers = []
-        dictator_round_numbers = [15, 16, 17, 18]
-        for rnd in dictator_round_numbers:
-            p = player.in_round(rnd)
-            visible_cat = player.participant.vars.get(f'visible_category_round_{rnd}', None)
+        pv = player.participant.vars
+        for rnd in [15, 16]:
+            # Recuperamos de participant.vars en lugar de group.
+            visible_cat = pv.get(f'visible_category_round_{rnd}')
+            kept       = pv.get(f'kept_r{rnd}')
+            assigned   = pv.get(f'assigned_r{rnd}', 0)
+            full_cat   = pv.get(f'cat_r{rnd}')
             dictator_offers.append({
-                'round': rnd,
-                'category': visible_cat.capitalize() if visible_cat else "Sin categoría asignada",
-                'kept': p.group.kept,
-                'assigned': p.group.assigned or 0,
+                'round':         rnd,
+                'category':      visible_cat,
+                'full_category': full_cat,
+                'kept':          kept,
+                'assigned':      assigned,
             })
 
-        return dict(
-            dictator_offers=dictator_offers
-        )
+        #agrego la línea de código necesaria para prolific. punto 3 del paso 1 del tutorial de otree hr. 
+        
+        
+        return dict(dictator_offers=dictator_offers)
 
-
-page_sequence = [
-    UserInfo,
-    PreguntaM,
-    Intro,
-    RoundN,  # Rondas 1-14: IAT
-    IATAssessmentPage,  # Ronda 15: Evaluación del IAT
-    MoralDecisionPageCerteza,  # Ronda 15: Decisión
-    # Results,                   # Por ahora, no queremos mostrar los resultados del IAT. En caso de querer hacer esto e
-    # en caso de querer hacerlo, falta manejar los assement de acuerdo con la aleatorización del IAT.
-    DictatorIntroduction,  # Rondas 16-18: Introducción al Dictador
-    DictatorOffer,  # Rondas 16-18: Oferta del Dictador,    # Rondas 16-18: Espera de Resultados del Dictador
-    ResultsDictador,  # Rondas 16-18: Resultados del Dictador,            # Ronda 18: Resultados Finales del Dictador
-]
-
-
-# página que podría ser útil, probablemente no.
-class Results(Page):
     @staticmethod
-    def is_displayed(player):
-        # Mostrar la página de resultados en la ronda 14
-        return player.round_number == 15
+    def before_next_page(player: Player, timeout_happened):
+        # Sobrescribimos el payoff con el valor guardado por participante
+        payoff16 = player.participant.vars.get('payoff_r16')
+        if payoff16 is not None:
+            player.payoff = payoff16
+
+
+class ResultsDictator2(Page):
+    """Resultados para participantes con ordering invertido (DictatorOffer2)."""
+    @staticmethod
+    def is_displayed(player: Player):
+        alternate = list(range(8, 15)) + list(range(1, 8))
+        return (
+            player.round_number == 16
+            and player.participant.vars.get("iat_round_order") == alternate
+        )
 
     @staticmethod
     def vars_for_template(player: Player):
-        def extract(rnd):
-            # Extraer tiempos de reacción de las rondas especificadas
-            trials = [
-                t
-                for t in Trial.filter(player=player.in_round(rnd))
-                if t.reaction_time is not None
-            ]
-            values = [t.reaction_time for t in trials]
-            return values
+        dictator_offers = []
+        pv = player.participant.vars
+        for rnd in [15, 16]:
+            # Para el caso invertido, label y full_category pueden venir empaquetados
+            vis       = pv.get(f'visible_category_round_{rnd}', {})
+            label     = vis.get("label", pv.get(f'cat_r{rnd}'))
+            full_cat  = vis.get("full_category", pv.get(f'cat_r{rnd}'))
+            kept      = pv.get(f'kept_r{rnd}')
+            assigned  = pv.get(f'assigned_r{rnd}', 0)
+            dictator_offers.append({
+                'round':         rnd,
+                'category':      label,
+                'full_category': full_cat,
+                'kept':          kept,
+                'assigned':      assigned,
+            })
+        return dict(dictator_offers=dictator_offers)
 
-        # Extraer datos para el primer IAT (rondas 3, 4, 6, 7)
-        data3 = extract(3)
-        data4 = extract(4)
-        data6 = extract(6)
-        data7 = extract(7)
-        dscore1_result = dscore1(data3, data4, data6, data7)
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Sobrescribimos el payoff con el valor guardado por participante
+        payoff16 = player.participant.vars.get('payoff_r16')
+        if payoff16 is not None:
+            player.payoff = payoff16
 
-        # Extraer datos para el segundo IAT (rondas 10, 13, 11, 14)
-        data10 = extract(10)
-        data13 = extract(13)
-        data11 = extract(11)
-        data14 = extract(14)
-        dscore2_result = dscore2(data10, data13, data11, data14)
 
-        # Recuperar el orden de las rondas del IAT
-        iat_round_order = player.participant.vars.get('iat_round_order', [])
+page_sequence = [
+    #InstruccionesGenerales1,
+    #InstruccionesGenerales2,
+    #Comprension1,
+    #Comprension2,
+    #Feedback1,
+    #Feedback2,
+    Comprehension,
+    ComprehensionFeedback,
+    Comprehension2,
+    ComprehensionFeedback2,
+    UserInfo,
+    #PreguntaM,
+    Intro,
+    RoundN,  # Rondas 1-14: iat.
+    IATAssessmentPage,  # Ronda 15: Evaluación del iat
+    MoralDecisionPageCerteza,
+    MoralDecisionPageCerteza2,
+    # Ronda 15: Decisión
+    # Results,                   # Por ahora, no queremos mostrar los resultados del iat. En caso de querer hacer esto e
+    # en caso de querer hacerlo, falta manejar los assement de acuerdo con la aleatorización del iat.
+    DictatorIntroduction,  # Rondas 16-18: Introducción al Dictador
+    DictatorOffer,
+    DictatorOffer2, # Rondas 16-18: Oferta del Dictador,    # Rondas 16-18: Espera de Resultados del Dictador
+    ResultsDictador,  # Rondas 16-18: Resultados del Dictador,            # Ronda 18: Resultados Finales del Dictador
+    #ResultsDictator2,
+]
 
-        # Asignar dscore1 y dscore2 según el orden de las rondas
-        if iat_round_order == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]:
-            player.dscore1 = dscore1_result
-            player.dscore2 = dscore2_result
-        elif iat_round_order == [8, 9, 10, 11, 12, 13, 14, 1, 2, 3, 4, 5, 6, 7]:
-            player.dscore1 = dscore2_result
-            player.dscore2 = dscore1_result
-        else:
-            # Manejo de otros posibles órdenes, si los hay
-            player.dscore1 = dscore1_result
-            player.dscore2 = dscore2_result
 
-        # Obtener combinaciones de pares positivos y negativos para el primer IAT
-        pos_pairs_iat1 = labels_for_block(get_block_for_round(3, player.session.params))
-        neg_pairs_iat1 = labels_for_block(get_block_for_round(6, player.session.params))
 
-        # Obtener combinaciones de pares positivos y negativos para el segundo IAT
-        pos_pairs_iat2 = labels_for_block(get_block_for_round(10, player.session.params))
-        neg_pairs_iat2 = labels_for_block(get_block_for_round(13, player.session.params))
-
-        # Validar si los resultados están dentro o fuera de los rangos definidos
-        dscore1_in_range = (
-                player.dscore1 >= player.iat1_lower_limit and
-                player.dscore1 <= player.iat1_upper_limit
-        )
-        dscore2_in_range = (
-                player.dscore2 >= player.iat2_lower_limit and
-                player.dscore2 <= player.iat2_upper_limit
-        )
-
-        # Decidir si mostrar u ocultar resultados en base a las preferencias del usuario
-        show_dscore1 = (
-                (dscore1_in_range and not player.hide_iat1_info_in_range) or
-                (not dscore1_in_range and not player.hide_iat1_info_out_of_range)
-        )
-        show_dscore2 = (
-                (dscore2_in_range and not player.hide_iat2_info_in_range) or
-                (not dscore2_in_range and not player.hide_iat2_info_out_of_range)
-        )
-
-        # Manejar valores del jugador
-        player_name = player.field_maybe_none('name') or "Anónimo"
-        player_age = player.field_maybe_none('age') or 18
-        player_sports = player.field_maybe_none('sports') or "Sin especificar"
-        player_random_number = player.field_maybe_none('random_number') or 0
-        moral_question = player.field_maybe_none('moral_question') or "Sin respuesta"
-        iat1_self_assessment = player.field_maybe_none('iat1_self_assessment') or "No especificado"
-        iat1_assessment_probability = player.field_maybe_none('iat1_assessment_probability') or 0
-        iat2_self_assessment = player.field_maybe_none('iat2_self_assessment') or "No especificado"
-        iat2_assessment_probability = player.field_maybe_none('iat2_assessment_probability') or 0
-
-        return dict(
-            show_dscore1=show_dscore1,
-            show_dscore2=show_dscore2,
-            dscore1=dscore1_result if show_dscore1 else None,
-            dscore2=dscore2_result if show_dscore2 else None,
-            pos_pairs_iat1=pos_pairs_iat1,
-            neg_pairs_iat1=neg_pairs_iat1,
-            pos_pairs_iat2=pos_pairs_iat2,
-            neg_pairs_iat2=neg_pairs_iat2,
-            player_name=player_name,
-            player_age=player_age,
-            player_sports=player_sports,
-            player_random_number=player_random_number,
-            moral_question=moral_question,
-            iat1_self_assessment=iat1_self_assessment,
-            iat1_assessment_probability=iat1_assessment_probability,
-            iat2_self_assessment=iat2_self_assessment,
-            iat2_assessment_probability=iat2_assessment_probability,
-        )

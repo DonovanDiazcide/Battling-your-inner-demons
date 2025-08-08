@@ -1,5 +1,5 @@
 {{ block title }}
-    Implicit Association Test
+    Etapa 1: Información sociodemográfica
 {{ endblock }}
 
 {% block styles  %}
@@ -76,6 +76,41 @@
 {% endblock %}
 
 {{ block content }}
-    {{ formfields }}
+    {{ formfield 'edad' }}
+    {{ formfield 'sexo' }}
+    {{ formfield 'ha_participado' }}
+
+    <div id="div_num_experimentos"
+         style="display: {% if player.field_maybe_none('ha_participado') == 'Sí' %}block{% else %}none{% endif %};">
+        {{ formfield 'num_experimentos' }}
+    </div>
+
     {{ next_button }}
 {{ endblock }}
+
+{% block scripts %}
+<script>
+  (function() {
+    // Encuentra el <select> y el div que lo envuelve
+    const select = document.querySelector('select[name="ha_participado"]');
+    const divNum = document.getElementById('div_num_experimentos');
+
+    function toggleNumField() {
+      if (select.value === 'Sí') {
+        divNum.style.display = 'block';
+      } else {
+        divNum.style.display = 'none';
+        // Opcional: limpiar el valor si se oculta
+        const input = divNum.querySelector('input');
+        if (input) { input.value = ''; }
+      }
+    }
+
+    // Al cambiar la opción, alterna visibilidad
+    select.addEventListener('change', toggleNumField);
+
+    // Al cargar la página, ajusta visibilidad según el valor inicial
+    toggleNumField();
+  })();
+</script>
+{% endblock %}

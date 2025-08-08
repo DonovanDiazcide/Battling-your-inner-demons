@@ -5,6 +5,7 @@
 
 .secondary {
     color: #a52a2a;
+    text-transform: uppercase;
 }
 
 .corners-container {
@@ -20,12 +21,16 @@ div.category {
     font-size: x-large;
 }
 
-/* Tamaño y ajuste de imágenes de categoría (esquinas) */
+/* Ajuste de imágenes de categoría (esquinas) */
 img.category {
     display: block;
-    width: 120px;
-    max-width: 100%;
-    height: auto;
+    width: auto;                /* conserva su ancho natural */
+    height: auto;               /* conserva su alto natural */
+    max-width: 45vw;            /* como mucho el 45% del ancho de la ventana */
+    max-height: 30vh;           /* como mucho el 30% de la altura de la ventana */
+    min-width: 100px;           /* al menos 100px de ancho */
+    min-height: 100px;          /* al menos 100px de alto */
+    object-fit: contain;        /* ajusta bien la imagen dentro de esos límites */
 }
 
 /* Contenedor principal en el centro */
@@ -44,9 +49,9 @@ p.stimulus {
     min-height: 1.25em;
 }
 
-/* El estímulo (imagen) -> ahora más pequeño por defecto */
+/* El estímulo (imagen) */
 img.stimulus {
-    width: 200px; /* tamaño base */
+    width: 200px;   /* tamaño base */
     max-width: 100%;
     height: auto;
 }
@@ -83,17 +88,17 @@ img.stimulus {
     text-align: center;
 }
 
-/* Media Query para dispositivos móviles (ancho < 600px) */
+/* Media Query para disbuenos móviles (ancho < 600px) */
 @media (max-width: 600px) {
-    /* Puedes apilar las esquinas en columna, si lo deseas:
-       .corners-container {
-         flex-direction: column;
-       }
+    /* Opcional: apilar las esquinas en columna
+       .corners-container { flex-direction: column; }
     */
 
-    /* Reducir aún más las imágenes en móvil */
     img.category {
-        width: 80px;
+        max-width: 80vw;
+        max-height: 25vh;
+        min-width: 60px;
+        min-height: 60px;
     }
 
     img.stimulus {

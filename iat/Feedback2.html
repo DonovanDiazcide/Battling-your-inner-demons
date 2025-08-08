@@ -1,0 +1,66 @@
+{% extends "global/Page.html" %}
+{% load static %}
+
+{% block styles %}
+  <link href="{% static 'iat.css' %}" rel="stylesheet"/>
+  <style>
+    .feedback-card {
+      border: 1px solid #ced4da;
+      border-radius: .375rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+      margin-bottom: 1.5rem;
+      background: #fafafa;
+    }
+    .feedback-card .question {
+      background: #f5f5f5;
+      border-bottom: 1px solid #ced4da;
+      padding: .75rem 1rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+    .feedback-card .your-answer {
+      background: #ffffff;
+      padding: .75rem 1rem;
+      border-bottom: 1px dashed #ffe8a1;
+    }
+    .feedback-card .correct-answer {
+      background: #d4edda;
+      padding: .75rem 1rem;
+      border-bottom: 1px dashed #a1e2bb;
+    }
+    .feedback-card .explanation {
+      padding: .75rem 1rem;
+      font-style: italic;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <h3 class="mb-4">Resultados del cuestionario</h3>
+
+  {% for q in feedback %}
+    <div class="feedback-card">
+      <div class="question">
+        {{ q.label }}
+      </div>
+      <div class="your-answer">
+        <strong>Tu respuesta:</strong>
+        {% if q.is_correct %}
+          — <strong class="text-success">Correcto</strong>
+        {% else %}
+          — <strong class="text-danger">Incorrecto</strong>
+        {% endif %}
+      </div>
+      <div class="correct-answer">
+        <strong>Explicación de la respuesta correcta:</strong>
+      </div>
+      <div class="explanation">
+        {{ q.explanation }}
+      </div>
+    </div>
+  {% endfor %}
+
+  <form method="post">
+    <button type="submit" class="btn btn-primary">Continuar</button>
+  </form>
+{% endblock %}

@@ -2,53 +2,156 @@
     {{ block.title }}
 {{ endblock }}
 
-{% block styles  %}
+{% block styles %}
     <link href="{% static 'iat.css' %}" rel="stylesheet"/>
+    <style>
+    /* Colores y transformaciones de texto */
+    .primary {
+        color: #000000;
+        text-transform: lowercase;
+    }
+    .secondary {
+        color: #000000;
+        text-transform: lowercase;
+    }
+
+    /* Contenedor de las esquinas */
+    .corners-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1em;
+    }
+
+    /* Texto de categoría */
+    div.category {
+        font-size: x-large;
+    }
+
+    /* Imágenes de categoría con ancho moderado y mínimo garantizado */
+    img.category {
+        display: block;
+        width: clamp(100px, 30vw, 200px);  /* mínimo 100px, ideal 30vw, máximo 200px */
+        height: auto;
+        object-fit: contain;
+    }
+
+    /* Contenedor central del estímulo */
+    .stimulus-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 1em;
+    }
+
+    /* Texto estímulo */
+    p.stimulus {
+        font-size: x-large;
+        min-height: 1.25em;
+    }
+
+    /* Imagen estímulo */
+    img.stimulus {
+        width: 200px;
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Feedback input */
+    .feedback {
+        width: 5em;
+        margin: 0 auto;
+    }
+    .feedback .form-control {
+        background-color: transparent;
+        border: none;
+        font-weight: bold;
+        font-size: x-large;
+    }
+
+    /* Ocultar elementos */
+    .hidden {
+        display: none !important;
+    }
+
+    /* Teclas */
+    .key {
+        font-family: monospace;
+        text-transform: uppercase;
+    }
+
+    /* Barra de progreso */
+    #progress-bar {
+        width: 100%;
+    }
+
+    /* Instrucciones centradas */
+    .instructions {
+        text-align: center;
+    }
+
+    /* Ajustes para móvil */
+    @media (max-width: 600px) {
+        img.category {
+            width: clamp(60px, 50vw, 120px);
+        }
+        img.stimulus {
+            width: 120px;
+        }
+        p.stimulus {
+            font-size: large;
+        }
+        .feedback {
+            width: 90%;
+        }
+    }
+    </style>
 {% endblock %}
 
 {{ block content }}
     <div class="corners-container">
         <div class="left corner">
-            {{ if params.primary_images }}
-                {{ if 'primary' in thumbnails.left }}
+            {% if params.primary_images %}
+                {% if 'primary' in thumbnails.left %}
                     <img class="left primary category" src="{{ thumbnails.left.primary }}">
-                {{ endif }}
-            {{ else }}
-                {{ if 'primary' in block.left }}
+                {% endif %}
+            {% else %}
+                {% if 'primary' in block.left %}
                     <div class="left primary category">{{ block.left.primary }}</div>
-                {{ endif }}
-            {{ endif }}
+                {% endif %}
+            {% endif %}
 
-            {{ if params.secondary_images }}
-                {{ if 'secondary' in thumbnails.left }}
+            {% if params.secondary_images %}
+                {% if 'secondary' in thumbnails.left %}
                     <img class="left secondary category" src="{{ thumbnails.left.secondary }}">
-                {{ endif }}
-            {{ else }}
-                {{ if 'secondary' in block.left }}
+                {% endif %}
+            {% else %}
+                {% if 'secondary' in block.left %}
                     <div class="left secondary category">{{ block.left.secondary }}</div>
-                {{ endif }}
-            {{ endif }}
+                {% endif %}
+            {% endif %}
         </div>
-        <div class="right corner">
-            {{ if params.primary_images }}
-                {{ if 'primary' in thumbnails.right }}
-                    <img class="right primary category" src="{{ thumbnails.right.primary }}">
-                {{ endif }}
-            {{ else }}
-                {{ if 'primary' in block.right }}
-                    <div class="right primary category">{{ block.right.primary }}</div>
-                {{ endif }}
-            {{ endif }}
 
-            {{ if params.secondary_images }}
-                {{ if 'secondary' in thumbnails.right }}
+        <div class="right corner">
+            {% if params.primary_images %}
+                {% if 'primary' in thumbnails.right %}
+                    <img class="right primary category" src="{{ thumbnails.right.primary }}">
+                {% endif %}
+            {% else %}
+                {% if 'primary' in block.right %}
+                    <div class="right primary category">{{ block.right.primary }}</div>
+                {% endif %}
+            {% endif %}
+
+            {% if params.secondary_images %}
+                {% if 'secondary' in thumbnails.right %}
                     <img class="right secondary category" src="{{ thumbnails.right.secondary }}">
-                {{ endif }}
-            {{ else }}
-                {{ if 'secondary' in block.right }}
+                {% endif %}
+            {% else %}
+                {% if 'secondary' in block.right %}
                     <div class="right secondary category">{{ block.right.secondary }}</div>
-                {{ endif }}
-            {{ endif }}
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 
@@ -62,35 +165,46 @@
         <div class="invalid-feedback" id="warning-txt"></div>
     </div>
 
-
     <div class="instructions">
         <hr/>
-        <p>Press <span class="key">{{ lkeys }}</span> or touch top-left corner for
-            {{ if 'primary' in labels.left  }} <span class="primary">{{ labels.left.primary }}</span> {{ endif }}
-            {{ if 'primary' in labels.left and 'secondary' in labels.left }} or {{ endif }}
-            {{ if 'secondary' in labels.left }} <span class="secondary">{{ labels.left.secondary }}</span> {{ endif }}
+        <p>Presiona <span class="key">{{ lkeys }}</span> o toca la esquina superior izquierda para
+            <strong>
+                {% if 'primary' in labels.left %}
+                    <span class="primary">{{ labels.left.primary }}</span>
+                {% endif %}
+                {% if 'primary' in labels.left and 'secondary' in labels.left %} o {% endif %}
+                {% if 'secondary' in labels.left %}
+                    <span class="secondary">{{ labels.left.secondary }}</span>
+                {% endif %}
+            </strong>
         </p>
-        <p>Press <span class="key">{{ rkeys }}</span> or touch top-right corner  for
-            {{ if 'primary' in labels.right }} <span class="primary">{{ labels.right.primary }}</span> {{ endif }}
-            {{ if 'primary' in labels.right and 'secondary' in labels.right }} or {{ endif }}
-            {{ if 'secondary' in labels.right }} <span class="secondary">{{ labels.right.secondary }}</span> {{ endif }}
+        <p>Presiona <span class="key">{{ rkeys }}</span> o toca la esquina superior derecha para
+            <strong>
+                {% if 'primary' in labels.right %}
+                    <span class="primary">{{ labels.right.primary }}</span>
+                {% endif %}
+                {% if 'primary' in labels.right and 'secondary' in labels.right %} o {% endif %}
+                {% if 'secondary' in labels.right %}
+                    <span class="secondary">{{ labels.right.secondary }}</span>
+                {% endif %}
+            </strong>
         </p>
-
         <div id="start-help">
-            <p><b>To begin</b>, press SPACE or touch middle of the screen.</p>
+            <p><b>Para comenzar</b>, presiona ESPACIO o toca el centro de la pantalla.</p>
         </div>
     </div>
 
     <progress id="progress-bar" max="{{ num_iterations }}" value="0"></progress>
 
-    {{ if DEBUG }}
-    <button type="button" id="cheat-btn" class="btn btn-dark">Cheat</button>
-    <input type="range" min="0" max="2" step="0.1" value="1.0" id="cheat-reaction">
-    {{ endif }}
-
+    {% if DEBUG %}
+        <button type="button" id="cheat-btn" class="btn btn-dark">Trampa</button>
+        <input type="range" min="0" max="2" step="0.1" value="1.0" id="cheat-reaction">
+    {% endif %}
 {{ endblock }}
 
 {{ block scripts }}
-<script src="{{ static 'iat.js' }}"></script>
-{{ if DEBUG }}<script src="{{ static 'iat_cheating.js' }}"></script>{{ endif }}
+    <script src="{% static 'iat.js' %}"></script>
+    {% if DEBUG %}
+        <script src="{% static 'iat_cheating.js' %}"></script>
+    {% endif %}
 {{ endblock }}

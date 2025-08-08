@@ -1,0 +1,119 @@
+{% block title %}
+    Etapa 5: Qué información revelar en las decisiones de la etapa 6
+{% endblock %}
+
+{% block styles %}
+    <link href="{% static 'iat.css' %}" rel="stylesheet"/>
+    <style>
+        /* Override para los labels que acompañan a un input radio */
+input[type="radio"] + label {
+    font-weight: normal;
+}
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 20px;
+        }
+        form {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="checkbox"] {
+            margin-top: 5px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .form-section {
+            margin-bottom: 20px;
+        }
+        .checkbox-group div {
+            margin-bottom: 10px;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* Estilos para el recuadro de información */
+        .info-box {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #e9f5ff;
+            border-left: 5px solid #007bff;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+{% endblock %}
+
+{{ block content }}
+   <!-- Recuadro para recordar los límites definidos -->
+    <div class="info-box">
+        <p><strong>Recordatorio de tus respuestas en la Etapa 4:</strong></p>
+        <p><strong>Prueba de asociación implícita Personas obesas / Personas delgadas: rango aceptable</strong> {{ iat1_lower_limit }} a {{ iat1_upper_limit }}</p>
+        <p><strong>Prueba de asociación implícita Personas homosexuales y heterosexuales: rango aceptable es de</strong> {{ iat2_lower_limit }} a {{ iat2_upper_limit }}</p>
+    </div>
+    <!-- Nuevo mensaje agregado -->
+    <div class="info-box">
+        A continuación, copiamos las instrucciones sobre tu decisión en la Etapa 5. Son las mismas instrucciones que ya leíste al principio.
+        <br><br>Vas a tomar una decisión sobre qué información te revelamos en las decisiones que tomas en la Etapa 6—las decisiones con consecuencias monetarias. En la Etapa 6, vas a saber a qué grupos están afectando tus decisiones—por ejemplo, sabes que hay dos grupos A y B y que uno de los grupos es de indígenas y el otro de mestizos. También vas a saber qué decisiones son más positivas para Grupo A, qué decisiones son más positivas para Grupo B, qué decisiones son más negativas para Grupo A, y qué decisiones son más negativas para Grupo B. Recuerda el ejemplo anterior: tienes que decidir una cantidad entre 0 y 100, y el número que decidas es la cantidad de pesos que recibe Grupo A, mientras que Grupo B recibe el resto de los cien pesos.
+    <br><br>
+    <p>En esta quinta etapa tienes que tomar una decisión para cada par de grupos sobre la cual hiciste una prueba en la Etapa 2. Para cada par de grupos, tienes que decidir si prefieres, en caso de que se te presente una decisión que involucre a ese par de grupos:
+- saber cuál es el grupo A y cuál es el grupo B (en nuestro ejemplo, esto involucra  saber si el grupo A son los indígenas y el grupo B son los mestizos, o al revés).
+- no saber cuál es el grupo A y cuál es el grupo B.</p>
+    <p>¿Cómo vas a tomar esta decisión? Es directa la decisión—siguiendo el ejemplo de las instrucciones iniciales, te preguntaríamos simplemente si quieres que se te revele cuál de los Grupos A y B son indígenas y cuáles son mestizos.
+<br><br>
+Por último, con 20% de probabilidad vamos a hacer lo contrario a lo que nos pediste que hiciéramos en esta quinta etapa. Si nos indicaste que no te reportáramos la identidad de los grupos, con 20% de probabilidad te la vamos a reportar. Si nos indicaste que sí querías que te reportáramos la identidad de los grupos, con 20% de probabilidad no te la vamos a reportar. Nota que con 80% de probabilidad sí vamos a hacer lo que nos pediste, por lo que sigue siendo mejor para indicarnos lo que realmente quieres que hagamos.</p>
+
+</div>
+        <p><strong>A continuación, indica tu preferencia para cada situación:</strong></p>
+</div>
+
+    {{ formfields }}
+    {{ next_button }}
+
+{{ endblock }}

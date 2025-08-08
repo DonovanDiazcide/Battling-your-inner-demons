@@ -1,18 +1,17 @@
-
 from os import environ
 SESSION_CONFIGS = [
     dict(
         name="iat_images",
-        display_name="IAT using images",
+        display_name="iat using images",
         num_demo_participants=4,
         app_sequence=["iat"],
         primary_images=True,
-        primary=['images:felidae', 'images:canidae', 'images:white', "images:black"],
+        primary=['images:Personas obesas', 'images:Personas delgadas', 'images:Personas homosexuales', "images:Personas heterosexuales"],
         secondary_images=True,
-        secondary=['emojis:positive', 'emojis:negative'],
+        secondary=['images:Bueno', 'images:Malo', 'images:Bueno', 'images:Malo', 'images:bueno peso', 'images:malo peso', 'images:bueno sexualidad', 'images:malo sexualidad' ],
         num_iterations={1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
-                        15: 1, 16: 1, 17: 1, 18: 1,
+                        15: 1, 16: 1,
                         },
     ),
 ]
@@ -23,7 +22,9 @@ SESSION_CONFIGS = [
 # e.g. self.session.config['participation_fee']
 
 SESSION_CONFIG_DEFAULTS = dict(
-    real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
+    # cada punto vale 0 unidades monetarias ahora, cambiar a 1 cuando se corra en Prolific. 
+    # comentario justo después de probar lo de arriba: ok, ya el payoff bonus es 0, buenísimo. 
+    real_world_currency_per_point=0.00, participation_fee=0.00, doc=""
 )
 
 PARTICIPANT_FIELDS = ['is_dropout']
@@ -33,17 +34,17 @@ SESSION_FIELDS = ['params']
 # for example: de, fr, ja, ko, zh-hans
 LANGUAGE_CODE = "en"
 
-# e.g. EUR, GBP, CNY, JPY
-REAL_WORLD_CURRENCY_CODE = "USD"
-USE_POINTS = True
+# e.g. EUR, GBP, CNY, JPY. Nota: hay que cambiar esto a dólares cuando se corra el experimento en pROLIFIC
+REAL_WORLD_CURRENCY_CODE = "MXN"
+USE_POINTS = True  # if True, then points are used instead of real-world currency
 
 ADMIN_USERNAME = "admin"
 # for security, best to set admin password in an environment variable
 ADMIN_PASSWORD = environ.get("OTREE_ADMIN_PASSWORD")
 
-DEMO_PAGE_TITLE = "Welcome to IAT based experiment"
+DEMO_PAGE_TITLE = "Welcome to iat based experiment"
 DEMO_PAGE_INTRO_HTML = """
-Espera las instrucciones para saber a qué página del IAT ingresar
+Espera las instrucciones para saber a qué página del iat ingresar
 """
 
 SECRET_KEY = "2015765205890"
@@ -54,8 +55,8 @@ import sys
 
 ROOMS = [
     dict(
-        name='IAT_experiment',
-        display_name='IAT_experiment',
+        name='iat_experiment',
+        display_name='iat_experiment',
         participant_label_file='_rooms/econ101.txt',
     ),
     dict(name='live_demo', display_name='Room for live demo (no participant labels)'),
