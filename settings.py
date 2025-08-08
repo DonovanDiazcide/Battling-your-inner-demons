@@ -13,6 +13,7 @@ SESSION_CONFIGS = [
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
                         15: 1, 16: 1,
                         },
+        use_minno_stiat=True,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
     ),
 ]
 

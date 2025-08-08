@@ -416,6 +416,13 @@ def get_num_iterations_for_round(rnd):
 
 
 class Player(BasePlayer):
+
+    #integración de variables para single target IAT
+     # ...
+    stiat_raw = models.LongStringField(blank=True)   # CSV emitido por MinnoJS
+    stiat_d   = models.FloatField(blank=True)        # opcional: D-score del ST-IAT
+
+
     iteration = models.IntegerField(initial=0)  # Contador para iteraciones del jugador
     num_trials = models.IntegerField(initial=0)  # Número total de intentos del jugador
     num_correct = models.IntegerField(initial=0)  # Número de respuestas correctas
@@ -1300,6 +1307,23 @@ class RoundN(Page):
     live_method = play_game
 
 
+#nueva página para el stiat de minno:
+
+class StiatMinno(Page):
+    form_model  = 'player'
+    form_fields = ['stiat_raw']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Actívalo con session.config['use_minno_stiat']=True y ponlo, por ejemplo, en la ronda 1
+        return player.round_number == 1 and player.session.config.get('use_minno_stiat', False)
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Si quieres: aquí podrías parsear player.stiat_raw y calcular player.stiat_d
+        player.participant.vars['minno_stiat_done'] = True
+
+
 class UserInfo(Page):
     form_model = 'player'
     form_fields = ['edad', 'sexo', 'ha_participado', 'num_experimentos']
@@ -1312,7 +1336,6 @@ class UserInfo(Page):
     def error_message(player, values):
         if values['ha_participado'] == 'Sí' and values['num_experimentos'] is None:
             return "Por favor indica en cuántos experimentos has participado."
-
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -2243,6 +2266,7 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
+    StiatMinno,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,

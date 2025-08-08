@@ -1,0 +1,48 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block title %}ST-IAT (MinnoJS){% endblock %}
+
+{% block content %}
+  <div id="stiat-root"></div>
+  <input type="hidden" name="stiat_raw" id="stiat_raw">
+  <div id="stiat-status" class="alert alert-info mt-3">Cargando el ST-IAT…</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- MinnoJS (mismo CDN del post) -->
+  <script src="https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js"></script>
+  <script>
+    (function () {
+      const root   = document.getElementById('stiat-root');
+      const hidden = document.getElementById('stiat_raw');
+      const status = document.getElementById('stiat-status');
+
+      function start() {
+        // Usa el ejemplo primero; luego cambias a tu propio script hospedado
+        const taskUrl = "https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/stiat/qualtrics/exampleSTIAT.js";
+
+        // Arranca Minno
+        minnoJS(root, taskUrl);
+
+        // Captura el output (CSV-like) en el hidden field para oTree
+        minnoJS.logger = function (value) {
+          hidden.value = value;
+        };
+
+        // Avanza automáticamente cuando termina
+        minnoJS.onEnd = function () {
+          // Pequeño delay para que oTree registre el valor
+          setTimeout(function () {
+            document.querySelector('form').submit();
+          }, 100);
+        };
+
+        if (status) status.remove();
+      }
+
+      if (window.minnoJS) start();
+      else window.addEventListener('load', start);
+    })();
+  </script>
+{% endblock %}
