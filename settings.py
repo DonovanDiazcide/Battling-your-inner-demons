@@ -27,8 +27,8 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=0.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = ['is_dropout']
-SESSION_FIELDS = ['params']
+PARTICIPANT_FIELDS = ['is_dropout', 'finished']
+SESSION_FIELDS = ['params', 'prolific_completion_url']
 
 # ISO-639 code
 # for example: de, fr, ja, ko, zh-hans

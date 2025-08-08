@@ -2193,6 +2193,7 @@ class ResultsDictador(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
+        player.participant.finished = True
         dictator_offers = []
         pv = player.participant.vars
         for rnd in [15, 16]:
