@@ -13,6 +13,11 @@ SESSION_CONFIGS = [
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
                         15: 1, 16: 1,
                         },
+
+
+        #agregué una nueva variable con el link de completación del experimento para redirigir a los participantes a prolific. 
+        completionlink=
+       'https://app.prolific.co/submissions/complete?cc=11111111',
     ),
 ]
 
@@ -60,6 +65,13 @@ ROOMS = [
         participant_label_file='_rooms/econ101.txt',
     ),
     dict(name='live_demo', display_name='Room for live demo (no participant labels)'),
+
+    dict(
+        name='your_prolific_study',
+        display_name='your_prolific_study',
+        # participant_label_file='_rooms/your_study.txt',
+        # use_secure_urls=True,
+    ),
 ]
 
 

@@ -1279,6 +1279,11 @@ class Intro(Page):
             params=params,
             labels=labels_for_block(block) if isinstance(block, dict) else {},
         )
+    
+    @staticmethod
+    def before_next_page(player, timeout_happened):
+        player.prolific_id = player.participant.label
+
 
 
 class RoundN(Page):
@@ -2181,8 +2186,6 @@ class DictatorOffer2(Page):
         pv[f'cat_r{rnd}'] = player.group.dictator_category
 
 
-## cometario random.
-
 class ResultsDictador(Page):
     @staticmethod
     def is_displayed(player: Player):
@@ -2221,6 +2224,13 @@ class ResultsDictador(Page):
         payoff16 = player.participant.vars.get('payoff_r16')
         if payoff16 is not None:
             player.payoff = payoff16
+
+    @staticmethod              
+    def js_vars(player):
+        return dict(
+            completionlink=
+              player.subsession.session.config['completionlink']
+        )
 
 
 class ResultsDictator2(Page):
@@ -2264,10 +2274,6 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
-    #Comprension1,
-    #Comprension2,
-    #Feedback1,
-    #Feedback2,
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,
