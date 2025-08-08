@@ -331,10 +331,8 @@ def creating_session(self):
         secondary=[None, None],
         secondary_images=False,
         num_iterations={
-            # Rondas existentes para iat.
             1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
             8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
-            # Rondas adicionales para Dictador.
             15: 1, 16: 1
         },
     )
@@ -343,50 +341,26 @@ def creating_session(self):
         session.params[param] = session.config.get(param, defaults[param])
 
     if self.round_number == 1:
-        players = list(self.get_players())
-        random.shuffle(players)
-        mitad = len(players) // 2
-
+        # --- CAMBIO AQUÍ: TODOS CON ORDEN DIRECTO 1..14 ---
         orden_directo = list(range(1, 15))
-        orden_invertido = list(range(8, 15)) + list(range(1, 8))
-
-        # 50% → directos
-        for p in players[:mitad]:
+        for p in self.get_players():
             p.participant.vars['iat_round_order'] = orden_directo
 
-        # 50% → invertidos
-        for p in players[mitad:]:
-            p.participant.vars['iat_round_order'] = orden_invertido
-
-        # --- Nuevo bloque: imprime resumen ordenado ---
-        print("[IAT ORDER SUMMARY]")
-        for p in sorted(players, key=lambda p: p.id_in_subsession):
-            order = p.participant.vars['iat_round_order']
-            # aquí decides cómo formatear el texto
-            print(f"Jugador {p.id_in_subsession}: {order}")
-
-        # tu código de categorías del Dictador sigue igual
+        # Mantén categorías del Dictador como estaban (sin aleatorización)
         shuffled_categories = Constants.categories.copy()
         random.shuffle(shuffled_categories)
-        session.vars['shuffled_dictator_categories'] = shuffled_categories
-        # Fijamos orden: 15→delgadas/obesas, 16→homo/hetero
         session.vars['shuffled_dictator_categories'] = Constants.categories.copy()
 
     block = get_block_for_round(self.round_number, session.params)
-
     self.practice = block.get('practice', False)
     self.primary_left = block.get('left', {}).get('primary', "")
     self.primary_right = block.get('right', {}).get('primary', "")
     self.secondary_left = block.get('left', {}).get('secondary', "")
     self.secondary_right = block.get('right', {}).get('secondary', "")
 
-        #print("shuffled categories:", shuffled_categories)
-
-    # Asignar categorías al Dictador basadas en la lista aleatoria para las rondas 15-18
     if self.round_number in [15, 16]:
         shuffled_categories = session.vars.get('shuffled_dictator_categories')
         if shuffled_categories:
-            # Asignar una categoría por ronda 15-18 al grupo
             assigned_category = shuffled_categories[self.round_number - 15]
             for group in self.get_groups():
                 group.dictator_category = assigned_category
