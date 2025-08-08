@@ -1252,7 +1252,7 @@ class Intro(Page):
     
     @staticmethod
     def before_next_page(player, timeout_happened):
-        player.prolific_id = player.participant.label
+        player.participant.vars['prolific_id'] = player.participant.label
 
 
 
