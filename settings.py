@@ -11,7 +11,7 @@ SESSION_CONFIGS = [
         secondary=['images:Bueno', 'images:Malo', 'images:Bueno', 'images:Malo', 'images:bueno peso', 'images:malo peso', 'images:bueno sexualidad', 'images:malo sexualidad' ],
         num_iterations={1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
-                        15: 1, 16: 1, 17: 1, 18: 1,
+                        15: 1, 16: 1,
                         },
     ),
 ]

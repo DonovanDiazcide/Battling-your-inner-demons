@@ -442,6 +442,10 @@ def get_num_iterations_for_round(rnd):
 
 
 class Player(BasePlayer):
+
+    #prolific
+    prolific_id = models.StringField(default=str(" "))
+
     iteration = models.IntegerField(initial=0)  # Contador para iteraciones del jugador
     num_trials = models.IntegerField(initial=0)  # Número total de intentos del jugador
     num_correct = models.IntegerField(initial=0)  # Número de respuestas correctas
@@ -1282,7 +1286,7 @@ class RoundN(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        # Mostrar solo en rondas de iat
+        # Mostrar solo en rondas de iat.
         return player.round_number <= 14
 
     @staticmethod
@@ -2191,7 +2195,7 @@ class ResultsDictador(Page):
         dictator_offers = []
         pv = player.participant.vars
         for rnd in [15, 16]:
-            # Recuperamos de participant.vars en lugar de group
+            # Recuperamos de participant.vars en lugar de group.
             visible_cat = pv.get(f'visible_category_round_{rnd}')
             kept       = pv.get(f'kept_r{rnd}')
             assigned   = pv.get(f'assigned_r{rnd}', 0)
@@ -2203,6 +2207,10 @@ class ResultsDictador(Page):
                 'kept':          kept,
                 'assigned':      assigned,
             })
+
+        #agrego la línea de código necesaria para prolific. punto 3 del paso 1 del tutorial de otree hr. 
+        
+        
         return dict(dictator_offers=dictator_offers)
 
     @staticmethod
@@ -2276,7 +2284,7 @@ page_sequence = [
     DictatorOffer,
     DictatorOffer2, # Rondas 16-18: Oferta del Dictador,    # Rondas 16-18: Espera de Resultados del Dictador
     ResultsDictador,  # Rondas 16-18: Resultados del Dictador,            # Ronda 18: Resultados Finales del Dictador
-    ResultsDictator2,
+    #ResultsDictator2,
 ]
 
 
