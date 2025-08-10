@@ -6,6 +6,7 @@ Numbers in block config corresponds to 1st and 2nd element of corresponding pair
 import copy
 import random
 
+# los participantes que reciben este bloque tiene el IAT dispacitados - discapacitados y luego el IAT homosexuales y heterosexuales. 
 BLOCKS1 = {
     # Rondas 1 a 7 (primer bloque: categorías 1 y 2)
     1: {
@@ -127,6 +128,8 @@ BLOCKS1 = {
 }
 
 # Configuración de bloques – Orden 2 (BLOCKS2)
+
+#los participantes que reciben este bloque tienen el IAT homosexuales - heterosexuales y luego el IAT discapacitados - discapacitados.
 BLOCKS2 = {
     # Rondas 1 a 7: invertimos el orden de las categorías primarias (2 y 1)
     1: {
