@@ -14,6 +14,9 @@ SESSION_CONFIGS = [
                         15: 1, 16: 1,
                         },
         use_minno_stiat=True,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
+
+        #quitar esto para cuando se corra en Prolific
+        prolific_completion_url="https://app.prolific.com/submissions/complete?cc=XXXXXXX",
     ),
 ]
 
@@ -29,6 +32,8 @@ SESSION_CONFIG_DEFAULTS = dict(
 )
 
 PARTICIPANT_FIELDS = ['is_dropout', 'finished']
+
+#session fields to store parameters and prolific url, esto es para implementar el experimento en Prolific, se necesita un link de completación. 
 SESSION_FIELDS = ['params', 'prolific_completion_url']
 
 # ISO-639 code

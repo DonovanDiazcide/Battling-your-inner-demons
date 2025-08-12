@@ -19,6 +19,7 @@ Implicit Association Test, draft
 from statistics import mean, stdev
 
 
+# funciones para calcular d-scores.
 
 def dscore1(data3: list, data4: list, data6: list, data7: list):
     # Filtrar valores demasiado largos.
@@ -101,7 +102,7 @@ def dscore2(data10: list, data13: list, data11: list, data14: list):
     dscore_mean2 = (dscore_10_11 + dscore_13_14) * 0.5
     return dscore_mean2
 
-
+# clase de Constants para definir las variables globales del experimento
 
 class Constants(BaseConstants):
     name_in_url = 'iat'
@@ -112,6 +113,7 @@ class Constants(BaseConstants):
     players_per_group = None
     num_rounds = 16  # 14 para iat + 4 para dictador
 
+    # variables que necesito globalmente para el iat: 
     keys = {"e": 'left', "i": 'right'}
     trial_delay = 0.250
     endowment = Decimal('100')  # Añadido para dictador
@@ -120,6 +122,9 @@ class Constants(BaseConstants):
     PersonasObesas = "personas obesas"
     PersonasHeterosexuales = "personas heterosexuales"
     PersonasHomosexuales = "personas homosexuales"
+
+
+    ### variables para el cuestionario de comprensión
 
     # 1 ·  lista canónica para no repetir
     STAGES_CORRECT = [
@@ -308,11 +313,11 @@ class Constants(BaseConstants):
     )
 
 
-
 def url_for_image(filename):
     return f"/static/images/{filename}"
 
 
+# clase Subsession para definir las variables de sesión
 class Subsession(BaseSubsession):
     practice = models.BooleanField()
     primary_left = models.StringField()
@@ -321,6 +326,7 @@ class Subsession(BaseSubsession):
     secondary_right = models.StringField()
 
 
+#función que se ejecuta al crear la sesión
 def creating_session(self):
     session = self.session
     defaults = dict(
@@ -350,7 +356,7 @@ def creating_session(self):
         shuffled_categories = Constants.categories.copy()
         random.shuffle(shuffled_categories)
         session.vars['shuffled_dictator_categories'] = Constants.categories.copy()
-
+        
     block = get_block_for_round(self.round_number, session.params)
     self.practice = block.get('practice', False)
     self.primary_left = block.get('left', {}).get('primary', "")
@@ -366,6 +372,7 @@ def creating_session(self):
                 group.dictator_category = assigned_category
 
 
+#funcion para obtener el bloque de la ronda
 def get_block_for_round(rnd, params):
     """Get a round setup from BLOCKS with actual categories' names substituted from session config"""
     if rnd in blocks.BLOCKS:
@@ -1267,7 +1274,7 @@ class Intro(Page):
 
 
 class RoundN(Page):
-    template_name = "iat/Main.html"
+    template_name = "iat/templates/Main.html"
 
     @staticmethod
     def is_displayed(player: Player):
@@ -1307,7 +1314,7 @@ class RoundN(Page):
     live_method = play_game
 
 
-#nueva página para el stiat de minno:
+#nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
 
 class StiatMinno(Page):
     form_model  = 'player'
@@ -2210,11 +2217,22 @@ class ResultsDictador(Page):
                 'assigned':      assigned,
             })
 
-        #agrego la línea de código necesaria para prolific. punto 3 del paso 1 del tutorial de otree hr. 
+        # **No levantar KeyError si no existe** quitar esto para cuando se corra en prolific
+        try:
+            prolific_url = player.session.prolific_completion_url
+        except KeyError:
+            prolific_url = None
         
         
-        return dict(dictator_offers=dictator_offers,             
-                    prolific_completion_url=getattr(player.session, 'prolific_completion_url', None),)
+        return dict(
+            dictator_offers=dictator_offers,
+            prolific_url=prolific_url,
+        )
+
+        # return dict para cuando se corre en prolific: 
+            #return dict(dictator_offers=dictator_offers,             
+                    #   prolific_completion_url=getattr(player.session, 'prolific_completion_url', None),)
+    
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -2266,7 +2284,7 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
-    StiatMinno,   # ⬅️ nueva página opcional con MinnoJS. 
+    #StiatMinno,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,
