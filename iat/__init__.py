@@ -102,7 +102,160 @@ def dscore2(data10: list, data13: list, data11: list, data14: list):
     dscore_mean2 = (dscore_10_11 + dscore_13_14) * 0.5
     return dscore_mean2
 
-# clase de Constants para definir las variables globales del experimento
+
+# === ST-IAT: parseo y D-score (MinnoJS) ======================================
+import csv, io
+from typing import Dict, Any, List, Tuple, Optional
+
+# Por defecto, en el script de Project Implicit (qstiat6.js) los dos bloques críticos
+# suelen ser: 3 = Target+Pleasant  (compatible) y 5 = Target+Unpleasant (incompatible).
+# Si en el futuro cambias el orden, cambia estos IDs vía session.config['stiat_block_map']
+DEFAULT_STIAT_BLOCK_MAP = {
+    "compatible":   [3],
+    "incompatible": [5],
+}
+
+def _to_bool(x):
+    # Acepta 1/0, "true"/"false", "True"/"False", etc.
+    if isinstance(x, bool):
+        return x
+    if x is None:
+        return None
+    s = str(x).strip().lower()
+    if s in ("1","true","t","yes","y","si","sí"):
+        return True
+    if s in ("0","false","f","no","n"):
+        return False
+    return None
+
+#funcion para el dscore de black. (o del primer st-iat)
+def parse_minno_stiat_csv(csv_text: str) -> List[Dict[str, Any]]:
+    """
+    Devuelve una lista de dicts con los campos que necesitamos:
+    block (int), rt (segundos), correct (bool).
+    Soporta columnas comunes de Minno: 'block','latency','rt','correct','error'
+    """
+    rows = []
+    if not csv_text:
+        return rows
+    f = io.StringIO(csv_text)
+    reader = csv.DictReader(f)
+    for r in reader:
+        # --- block ---
+        blk = r.get('block') or r.get('Block') or r.get('blockNum') or r.get('phase')
+        try:
+            block = int(str(blk).strip())
+        except:
+            # si no hay número, salta fila
+            continue
+
+        # --- latencia (ms o s) ---
+        lat = r.get('latency') or r.get('rt') or r.get('latency_ms') or r.get('responseLatency')
+        if lat is None:
+            continue
+        try:
+            rt = float(lat)
+        except:
+            continue
+        # Si parece estar en milisegundos, pásalo a segundos
+        if rt > 50:  # heurística: >50 es casi seguro milisegundos
+            rt = rt / 1000.0
+
+        # --- correct / error ---
+        correct = _to_bool(r.get('correct'))
+        if correct is None:
+            # Algunas hojas traen 'error' (1 = error)
+            err = r.get('error') or r.get('Error')
+            if err is not None:
+                correct = not _to_bool(err)
+        # Si sigue None, asumimos "desconocido"; los tratamos como incorrectos para ser conservadores
+        if correct is None:
+            correct = False
+
+        rows.append(dict(block=block, rt=rt, correct=bool(correct)))
+    return rows
+
+def compute_stiat_d(
+    trials: List[Dict[str, Any]],
+    compat_blocks: List[int],
+    incompat_blocks: List[int],
+    *,
+    error_penalty_s: float = 0.600,  # 600 ms
+    min_rt_s: float = 0.300,
+    max_rt_s: float = 10.000,
+    max_fast_prop: float = 0.10,
+) -> Tuple[Optional[float], Dict[str, Any]]:
+    """
+    Implementación estilo Greenwald et al. (2003) adaptada a ST-IAT:
+      • descarta RT < 300 ms y > 10 s
+      • exclusión si >10% de todos los trials (antes de descartar por >10s) < 300 ms
+      • penaliza errores sumando 600 ms al RT del ensayo
+      • D = (mean_incompat - mean_compat) / sd_pooled(trials de ambos bloques críticos)
+    Devuelve (D, meta) donde meta trae contadores/flags útiles para depurar.
+    """
+    meta = {
+        "n_total": len(trials),
+        "n_fast_300ms": 0,
+        "excluded_fast_prop": False,
+        "n_compat_used": 0,
+        "n_incompat_used": 0,
+        "sd_pooled": None,
+    }
+    if not trials:
+        return None, meta
+
+    # Proporción <300 ms (con el conjunto completo que vino)
+    fast = [t for t in trials if t["rt"] < min_rt_s]
+    meta["n_fast_300ms"] = len(fast)
+    if meta["n_total"] > 0 and (len(fast) / meta["n_total"]) > max_fast_prop:
+        meta["excluded_fast_prop"] = True
+        return None, meta  # recomendación habitual: excluir participante
+
+    # Mantén solo bloque crítico y RT dentro de [300ms,10s]; aplica penalización a errores
+    compat_rts = []
+    incompat_rts = []
+    for t in trials:
+        if t["rt"] < min_rt_s or t["rt"] > max_rt_s:
+            continue
+        rt = t["rt"] + (error_penalty_s if not t["correct"] else 0.0)
+        if t["block"] in compat_blocks:
+            compat_rts.append(rt)
+        elif t["block"] in incompat_blocks:
+            incompat_rts.append(rt)
+
+    meta["n_compat_used"] = len(compat_rts)
+    meta["n_incompat_used"] = len(incompat_rts)
+
+    if len(compat_rts) < 2 or len(incompat_rts) < 2:
+        return None, meta
+
+    pooled = compat_rts + incompat_rts
+    sd = stdev(pooled) if len(pooled) >= 2 else 0.0
+    meta["sd_pooled"] = sd
+
+    if sd == 0:
+        return None, meta
+
+    d = (mean(incompat_rts) - mean(compat_rts)) / sd
+    return float(round(d, 4)), meta
+
+def classify_stiat_black(d: Optional[float]) -> str:
+    """
+    Umbrales habituales: |D| < .15 = Neutral; .15–.35 = Leve; .35–.65 = Moderada; >.65 = Fuerte.
+    Para ST-IAT de 'Black people':
+      D > 0 → Black+Pleasant más rápido (evaluación implícita positiva hacia Black)
+      D < 0 → Black+Unpleasant más rápido (evaluación implícita negativa hacia Black)
+    """
+    if d is None:
+        return "Sin clasificación"
+    x = abs(d)
+    if x < 0.15:
+        return "Neutral"
+    level = "Leve" if x <= 0.35 else ("Moderada" if x <= 0.65 else "Fuerte")
+    return f"{level}: {'Black+positivo' if d>0 else 'Black+negativo'}"
+
+
+# clase de Constants para definir las variables globales del experimento. 
 
 class Constants(BaseConstants):
     name_in_url = 'iat'
@@ -424,11 +577,21 @@ def get_num_iterations_for_round(rnd):
 
 class Player(BasePlayer):
 
-    #integración de variables para single target IAT
+    #integración de variables para single target IAT, black
      # ...
     stiat_raw = models.LongStringField(blank=True)   # CSV emitido por MinnoJS
     stiat_d   = models.FloatField(blank=True)        # opcional: D-score del ST-IAT
 
+
+     # NUEVOS: Sexuality
+    stiat_sex_raw     = models.LongStringField(blank=True)
+    stiat_sex_d       = models.FloatField(blank=True)
+    stiat_sex_reason  = models.LongStringField(blank=True)
+
+    # NUEVOS: Disability
+    stiat_dis_raw     = models.LongStringField(blank=True)
+    stiat_dis_d       = models.FloatField(blank=True)
+    stiat_dis_reason  = models.LongStringField(blank=True)
 
     iteration = models.IntegerField(initial=0)  # Contador para iteraciones del jugador
     num_trials = models.IntegerField(initial=0)  # Número total de intentos del jugador
@@ -1266,7 +1429,8 @@ class Intro(Page):
 
 
 
-    
+    # comentario para poder subir esta rama a github. La idea es poder simular un label de prolific para que efectivamente aparezcan los pagos en la ventaja de payoffs correctamente. 
+
     @staticmethod
     def before_next_page(player, timeout_happened):
         player.participant.vars['prolific_id'] = player.participant.label
@@ -1316,19 +1480,37 @@ class RoundN(Page):
 
 #nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
 
+# En tu clase StiatMinno, sustituye el before_next_page por éste:
+
 class StiatMinno(Page):
     form_model  = 'player'
     form_fields = ['stiat_raw']
 
     @staticmethod
     def is_displayed(player: Player):
-        # Actívalo con session.config['use_minno_stiat']=True y ponlo, por ejemplo, en la ronda 1
+        # muéstralo en la ronda 1 cuando lo actives en la sesión
         return player.round_number == 1 and player.session.config.get('use_minno_stiat', False)
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # Si quieres: aquí podrías parsear player.stiat_raw y calcular player.stiat_d
-        player.participant.vars['minno_stiat_done'] = True
+        # 1) parsear CSV de Minno
+        trials = parse_minno_stiat_csv(player.stiat_raw or "")
+
+        # 2) mapa de bloques: toma de session.config si existe; si no, usa defaults (3=compat, 5=incompat)
+        bm = player.session.config.get('stiat_block_map', DEFAULT_STIAT_BLOCK_MAP)
+        compat = bm.get("compatible", [3])
+        incompat = bm.get("incompatible", [5])
+
+        # 3) calcular D
+        d, meta = compute_stiat_d(trials, compat, incompat)
+
+        # 4) guardar
+        player.stiat_d = d
+        pv = player.participant.vars
+        pv['stiat_meta'] = meta
+        pv['stiat_block_map'] = dict(compatible=compat, incompatible=incompat)
+        pv['minno_stiat_done'] = True
+        pv['stiat_class'] = classify_stiat_black(d)
 
 
 class UserInfo(Page):
@@ -1448,8 +1630,17 @@ class Comprehension(Page):
             "Decisiones monetarias que pueden afectar a grupos de la Etapa 2",
         ]
         random.shuffle(etapas)
-        return dict(etapas_aleatorias=etapas)
 
+        stiat_val = player.field_maybe_none('stiat_d')  # <- seguro si es None
+       
+
+        return dict(
+            etapas_aleatorias=etapas,
+            stiat_d=stiat_val,
+            has_stiat=(stiat_val is not None),
+            stiat_reason=player.participant.vars.get('stiat_d_reason', ''),
+        )
+    
 class ComprehensionFeedback(Page):
     @staticmethod
     def vars_for_template(player):
@@ -2284,7 +2475,7 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
-    #StiatMinno,   # ⬅️ nueva página opcional con MinnoJS. 
+    StiatMinno,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,

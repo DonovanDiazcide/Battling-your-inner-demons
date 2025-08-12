@@ -15,6 +15,16 @@
 {% block title %}Cuestionario de comprensión{% endblock title %}
 
 {% block content %}
+
+CAMBIAR DESPUÉS, LO USÉ COMO PRUEBA PARA QUE EL DSCORE SE CALCULE CORRECTAMENTE. 
+
+{% if has_stiat %}
+  <p>D-score ST-IAT: <strong>{{ player.stiat_d }}</strong></p>
+{% else %}
+  <p>Contestaste demasiado rápido o tuviste muchos errores.</p>
+{% endif %}
+
+
 <p>Contesta las siguientes preguntas para confirmar que entendiste las reglas.</p>
 <hr>
 
