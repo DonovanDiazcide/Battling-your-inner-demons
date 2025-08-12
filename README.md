@@ -1,5 +1,5 @@
-# oTree apps
-## Implicit Association Test
+# oTree apps.
+## Implicit Association Test.
 
 Features:
 - customizable categories and stimuli
