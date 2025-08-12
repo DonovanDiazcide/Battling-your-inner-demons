@@ -128,7 +128,7 @@ def _to_bool(x):
         return False
     return None
 
-#funcion para el dscore de black. (o del primer st-iat)
+#funcion para el dscore de black. (o del primer st-iat).
 def parse_minno_stiat_csv(csv_text: str) -> List[Dict[str, Any]]:
     """
     Devuelve una lista de dicts con los campos que necesitamos:
