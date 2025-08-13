@@ -1,0 +1,71 @@
+{% extends "global/Page.html" %}
+{% load static %}
+
+{% block title %}IAT{% endblock %}
+
+{% block content %}
+  <div id="minno-root" style="min-height:520px; display:flex; align-items:center; justify-content:center;">
+    <div id="status" style="font-family:system-ui; color:#666;">Cargando IAT…</div>
+  </div>
+
+  <!-- Campo oTree que guardará el CSV -->
+  <input type="hidden" name="iat_full_raw" id="iat_full_raw" />
+
+  <div id="minno-error"
+       style="display:none; margin-top:16px; padding:12px; border:1px solid #f99; background:#fee; color:#900; white-space:pre-wrap; font-family:ui-monospace;">
+  </div>
+
+  <!-- Runtime de MinnoJS (local) -->
+  <script src="{% static 'minno/pi-minno.js' %}"></script>
+  <script>
+  (function(){
+    const root   = document.getElementById('minno-root');
+    const status = document.getElementById('status');
+    const errBox = document.getElementById('minno-error');
+    const out    = document.getElementById('iat_full_raw');
+
+    // Nuestro task local
+    const TASK_URL = "{% static 'minno/iat_two_cat_local.js' %}";
+
+    function showError(title, e){
+      if (status) status.textContent = 'Error al cargar el IAT';
+      errBox.style.display = 'block';
+      errBox.textContent = (title ? title + '\n' : '')
+        + (e && (e.stack || e.message || e)) ;
+    }
+
+    if (!window.minnoJS){
+      showError('No se pudo cargar MinnoJS (pi-minno.js). Revisa la ruta estática.');
+      return;
+    }
+
+    // Probar que el task existe antes de ejecutar
+    fetch(TASK_URL, {method:'HEAD'}).then(r => {
+      if (!r.ok) throw new Error('Task no encontrado: ' + TASK_URL + ' (HTTP ' + r.status + ')');
+
+      if (status) status.textContent = 'Iniciando IAT…';
+
+      // Guardar CSV en el input hidden (para oTree)
+      minnoJS.logger = function(value){
+        try { out.value = value; } catch(e) { console.warn(e); }
+      };
+
+      // Al terminar, enviar el formulario oTree
+      minnoJS.onEnd = function(){
+        setTimeout(function(){
+          const form = document.getElementById('form');
+          if (form) form.submit();
+        }, 100);
+      };
+
+      // ¡A correr!
+      minnoJS(root, TASK_URL);
+    })
+    .catch(err => showError('No se pudo cargar el archivo del IAT.', err));
+
+    // Mostrar cualquier error JS
+    window.addEventListener('error', ev => showError('Error en runtime o task.', ev.error || ev.message));
+    window.addEventListener('unhandledrejection', ev => showError('Promise rechazada sin capturar.', ev.reason));
+  })();
+  </script>
+{% endblock %}

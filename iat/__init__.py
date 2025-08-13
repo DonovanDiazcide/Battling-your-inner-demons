@@ -178,6 +178,99 @@ def parse_minno_stiat_csv(csv_text: str) -> List[Dict[str, Any]]:
         rows.append(dict(block=block, rt=rt, correct=bool(correct)))
     return rows
 
+
+# función para calcular el d-score del IAT clásico (dos categorías).
+def compute_iat_d_full(
+    trials,
+    compat_blocks=(3,6),
+    incompat_blocks=(4,7),
+    *,
+    algorithm: str = "recommended",   # "recommended" | "extension"
+    error_penalty_s: float = 0.600,
+    min_rt_s: float = 0.300,
+    max_rt_s: float = 10.000,
+    max_fast_prop: float = 0.10,
+):
+    """
+    IAT clásico (dos categorías). Filtrado: RT<300ms, RT>10s; exclusión si >10%<300ms.
+    Penalización de error: +600ms.
+    - "recommended": D = mean( (M6-M3)/SD(3,6) , (M7-M4)/SD(4,7) )
+    - "extension"  : D = (M(6&7) - M(3&4)) / SD(3,4,6,7)
+    """
+    meta = {
+        "n_total": len(trials),
+        "n_fast_300ms": 0,
+        "excluded_fast_prop": False,
+        "n_b3": 0, "n_b4": 0, "n_b6": 0, "n_b7": 0,
+        "algo": algorithm,
+    }
+    if not trials:
+        return None, meta
+
+    # proporción <300ms con el conjunto crudo (criterio de exclusión)
+    fast = [t for t in trials if t["rt"] < min_rt_s]
+    meta["n_fast_300ms"] = len(fast)
+    if meta["n_total"] > 0 and (len(fast)/meta["n_total"]) > max_fast_prop:
+        meta["excluded_fast_prop"] = True
+        return None, meta
+
+    # filtra por rango y aplica penalización de error
+    def penalized_rt(t):
+        if t["rt"] < min_rt_s or t["rt"] > max_rt_s:
+            return None
+        return t["rt"] + (error_penalty_s if not t["correct"] else 0.0)
+
+    # recoge RTs por bloque
+    by_block = {3:[],4:[],6:[],7:[]}
+    for t in trials:
+        if t["block"] in by_block:
+            rt = penalized_rt(t)
+            if rt is not None:
+                by_block[t["block"]].append(rt)
+
+    meta["n_b3"], meta["n_b4"] = len(by_block[3]), len(by_block[4])
+    meta["n_b6"], meta["n_b7"] = len(by_block[6]), len(by_block[7])
+
+    # checa datos mínimos
+    if algorithm == "recommended":
+        if len(by_block[3])<2 or len(by_block[6])<2 or len(by_block[4])<2 or len(by_block[7])<2:
+            return None, meta
+        import statistics as S
+        # pair (3,6)
+        sd36 = S.stdev(by_block[3] + by_block[6])
+        if sd36 == 0: return None, meta
+        d36 = (S.mean(by_block[6]) - S.mean(by_block[3])) / sd36
+        # pair (4,7)
+        sd47 = S.stdev(by_block[4] + by_block[7])
+        if sd47 == 0: return None, meta
+        d47 = (S.mean(by_block[7]) - S.mean(by_block[4])) / sd47
+        d = float(round((d36 + d47)/2, 4))
+        return d, meta
+
+    else:  # "extension" (Minno extension)
+        import statistics as S
+        compat = by_block[compat_blocks[0]] + by_block[compat_blocks[1]]
+        incompat = by_block[incompat_blocks[0]] + by_block[incompat_blocks[1]]
+        if len(compat)<2 or len(incompat)<2:
+            return None, meta
+        pooled = by_block[3] + by_block[4] + by_block[6] + by_block[7]
+        sd_all = S.stdev(pooled) if len(pooled)>=2 else 0.0
+        if sd_all == 0: return None, meta
+        d = float(round((S.mean(incompat) - S.mean(compat)) / sd_all, 4))
+        return d, meta
+
+# función para clasificar el d-score del IAT clásico (dos categorías).
+def classify_iat_generic(d: float, pos_label: str, neg_label: str) -> str:
+    if d is None: return "Sin clasificación"
+    x = abs(d)
+    if x < 0.15: level = "Neutral"
+    elif x <= 0.35: level = "Leve"
+    elif x <= 0.65: level = "Moderada"
+    else: level = "Fuerte"
+    return f"{level}: preferencia por {pos_label if d>0 else neg_label}"
+
+
+# función para calcular el d-score del ST-IAT (de Black, Sexualidad o Discapacidad).
 def compute_stiat_d(
     trials: List[Dict[str, Any]],
     compat_blocks: List[int],
@@ -636,8 +729,10 @@ def get_num_iterations_for_round(rnd):
 
 class Player(BasePlayer):
 
-    #variables para el iat de minno: 
-    iat_raw = models.LongStringField(blank=True)
+    # --- IAT (dos categorías) con MinnoJS ---
+    iat_full_raw    = models.LongStringField(blank=True)
+    iat_full_d      = models.FloatField(blank=True)
+    iat_full_reason = models.LongStringField(blank=True)
 
 
 
@@ -1545,29 +1640,38 @@ class RoundN(Page):
 
 #nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
 
+# PAGES two categories IAT. 
 
-#iats con dos categorías de minno:
-
-class IatMinno(Page):
+class IatMinnoFull(Page):
     form_model  = 'player'
-    form_fields = ['iat_raw']
+    form_fields = ['iat_full_raw']
 
     @staticmethod
     def is_displayed(player: Player):
-        # muéstralo en la ronda 1 cuando lo actives en la sesión
+        # Actívalo con un flag en session.config
         return player.round_number == 1 and player.session.config.get('use_minno_iat', False)
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # 1) parsear CSV de Minno
-        trials = parse_minno_stiat_csv(player.iat_raw or "")
-
-        # 2) por ahora solo guardamos meta básica; el D clásico lo conectamos luego
+        trials = parse_minno_stiat_csv(player.iat_full_raw or "")
+        cfg = player.session.config
+        algo = cfg.get('iat_algorithm', 'recommended')  # "recommended" o "extension"
+        d, meta = compute_iat_d_full(
+            trials,
+            compat_blocks=tuple(cfg.get('iat_compat_blocks', (3,6))),
+            incompat_blocks=tuple(cfg.get('iat_incompat_blocks', (4,7))),
+            algorithm=algo
+        )
+        player.iat_full_d = d
+        # razón de exclusión con tu helper existente
+        player.iat_full_reason = _reason_from_meta(d, meta)
         pv = player.participant.vars
         pv['minno_iat_done'] = True
-        pv['iat_n_trials'] = len(trials)
+        pv['iat_meta'] = meta
+        pv['iat_algo'] = algo
 
 
+# pages ST-IAT. 
 # En tu clase StiatMinno, sustituye el before_next_page por éste:
 
 class StiatMinno(Page):
@@ -2631,7 +2735,7 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
-    StiatSexuality,   # ⬅️ nueva página opcional con MinnoJS. 
+    IatMinnoFull,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,
