@@ -1,0 +1,61 @@
+{% extends "otree/Page.html" %}
+{% load otree static %}
+
+{% block title %}Prueba de Asociación Implícita{% endblock %}
+
+{% block content %}
+<style>
+  /* ocultamos el textarea de datos */
+  #iat_payload { display:none; }
+  /* contenedor del lienzo de Minno */
+  #minno-root { min-height: 480px; }
+</style>
+
+<!-- Campo que oTree guardará en Player.iat_minno2_csv -->
+<textarea id="iat_payload" name="iat_minno2_csv"></textarea>
+
+<div id="minno-root"></div>
+
+<script>
+(function () {
+  // raíz donde se renderiza el IAT
+  var root = document.getElementById('minno-root');
+  // textarea oculto que recibe el CSV
+  var payload = document.getElementById('iat_payload');
+  // referencia al form de oTree
+  var form = document.querySelector('form');
+
+  function loadScript(src, onload){
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onload;
+    s.onreadystatechange = onload;
+    document.body.appendChild(s);
+  }
+
+  // 1) Cargar MinnoJS "pi-minno.js" desde el CDN oficial
+  // (Es el archivo que recomienda el blog de MinnoJS para Qualtrics)
+  loadScript('https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js', function () {
+
+    // 2) Ejecutar el IAT **ejemplo oficial** de dos categorías (race)
+    //    Puedes cambiar la URL por cualquier otro demo en la misma carpeta.
+    //    Ej.: demoRace0005.js, exampleQIATdisability.js, etc.
+    //    URL de demos: https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.7.3/IAT/qualtrics/
+    minnoJS(root, 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.7.3/IAT/qualtrics/exampleQIAT.js');
+
+    // Minno no conoce oTree; aquí capturamos el log (CSV) en el textarea
+    minnoJS.logger = function (value) {
+      payload.value = value || '';
+    };
+
+    // Al terminar, esperamos un instante y enviamos el form de oTree
+    minnoJS.onEnd = function () {
+      setTimeout(function(){ form.submit(); }, 120);
+    };
+  });
+
+  // TIP de los autores: para saltar bloques en pruebas => Esc, luego Enter
+})();
+</script>
+
+{% endblock %}

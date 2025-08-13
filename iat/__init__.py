@@ -636,10 +636,9 @@ def get_num_iterations_for_round(rnd):
 
 class Player(BasePlayer):
 
-    #variables para el iat de minno: 
-    iat_raw = models.LongStringField(blank=True)
 
-
+    #variables para el iat:
+    iat_minno2_csv = models.LongStringField(blank=True)
 
     # variables para el st-iat de minno:
 
@@ -1544,6 +1543,21 @@ class RoundN(Page):
 
 
 #nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
+
+# --- NUEVA PÁGINA: ejecuta Minno y recibe el CSV
+class MinnoIAT2Cats(Page):
+    form_model = 'player'
+    form_fields = ['iat_minno2_csv']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # muéstralo donde te convenga; por defecto, ronda 1
+        return player.round_number == 1
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # marca que se terminó; úsalo si quieres
+        player.participant.vars['minno_iat2cats_done'] = bool(player.iat_minno2_csv)
 
 
 #iats con dos categorías de minno:
@@ -2631,6 +2645,7 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
+    MinnoIAT2Cats,
     StiatSexuality,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
