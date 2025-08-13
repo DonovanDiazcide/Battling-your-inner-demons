@@ -106,6 +106,157 @@ def dscore2(data10: list, data13: list, data11: list, data14: list):
     return dscore_mean2
 
 
+# ========= Minno IAT (2 categorías) – Parser + D-score =========
+import csv, io
+from statistics import mean, stdev
+from typing import Any, Dict, List, Optional, Tuple
+
+MINNO_IAT_MIN_RT = 0.300
+MINNO_IAT_MAX_RT = 10.000
+MINNO_IAT_FAST_PROP = 0.10
+MINNO_IAT_ERR_PENALTY = 0.600  # 600 ms
+
+def _min2_to_bool(x):
+    if isinstance(x, bool): return x
+    if x is None: return None
+    s = str(x).strip().lower()
+    if s in {"1","true","t","yes","y","si","sí"}: return True
+    if s in {"0","false","f","no","n"}: return False
+    return None
+
+def parse_minno_iat_csv(csv_text: str) -> List[Dict[str, Any]]:
+    """
+    Devuelve dicts con: block(int), rt(segundos), correct(bool)
+    Soporta encabezados comunes de Minno/Qualtrics.
+    """
+    rows: List[Dict[str, Any]] = []
+    if not csv_text:
+        return rows
+    f = io.StringIO(csv_text)
+    reader = csv.DictReader(f)
+    for r in reader:
+        blk_raw = r.get('block') or r.get('Block') or r.get('blockNum') or r.get('phase')
+        try:
+            block = int(str(blk_raw).strip())
+        except:
+            continue
+
+        lat_raw = r.get('latency') or r.get('rt') or r.get('latency_ms') or r.get('responseLatency')
+        if lat_raw is None:
+            continue
+        try:
+            rt = float(lat_raw)
+        except:
+            continue
+        # Heurística ms→s
+        if rt > 50:
+            rt = rt / 1000.0
+
+        correct = _min2_to_bool(r.get('correct'))
+        if correct is None:
+            err = r.get('error') or r.get('Error')
+            if err is not None:
+                correct = not _min2_to_bool(err)
+        if correct is None:
+            correct = False
+
+        rows.append(dict(block=block, rt=rt, correct=bool(correct)))
+    return rows
+
+def _minno_iat_reason_from_meta(d: Optional[float], meta: Dict[str, Any]) -> str:
+    if d is not None:
+        return ''
+    if meta.get('excluded_fast_prop'):
+        return 'Excluido: >10% de RT <300 ms'
+    if meta.get('sd36') == 0 or meta.get('sd47') == 0 or meta.get('sd_pooled') == 0:
+        return 'Excluido: SD=0'
+    if meta.get('n3',0) < 2 or meta.get('n6',0) < 2 or meta.get('n4',0) < 2 or meta.get('n7',0) < 2:
+        return f"Excluido: pocos ensayos (b3={meta.get('n3',0)}, b4={meta.get('n4',0)}, b6={meta.get('n6',0)}, b7={meta.get('n7',0)})"
+    return 'Excluido: sin datos válidos'
+
+def compute_minno_iat_d(
+    trials: List[Dict[str, Any]],
+    compat_blocks: Tuple[int,int] = (3,4),
+    incompat_blocks: Tuple[int,int] = (6,7),
+    *,
+    error_penalty_s: float = MINNO_IAT_ERR_PENALTY,
+    min_rt_s: float = MINNO_IAT_MIN_RT,
+    max_rt_s: float = MINNO_IAT_MAX_RT,
+    max_fast_prop: float = MINNO_IAT_FAST_PROP,
+) -> Tuple[Optional[float], Dict[str, Any]]:
+    """
+    Implementación estilo Greenwald (2003) para IAT de 7 bloques:
+      - chequeo de rápidos <300ms (>10% ⇒ exclusión)
+      - filtra RT fuera de [0.3, 10] s
+      - penaliza errores sumando 600 ms
+      - D = promedio( (mean6-mean3)/sd(3∪6), (mean7-mean4)/sd(4∪7) )
+    Devuelve (D, meta)
+    """
+    meta: Dict[str, Any] = {
+        "n_total": len(trials),
+        "n_fast_300ms": 0,
+        "excluded_fast_prop": False,
+        "n3": 0, "n4": 0, "n6": 0, "n7": 0,
+        "sd36": None, "sd47": None, "sd_pooled": None,
+        "d36": None, "d47": None,
+    }
+    if not trials:
+        return None, meta
+
+    # 1) proporción <300ms en crudo (antes de filtrar max 10s)
+    fast = [t for t in trials if t["rt"] < min_rt_s]
+    meta["n_fast_300ms"] = len(fast)
+    if meta["n_total"] > 0 and (len(fast) / meta["n_total"]) > max_fast_prop:
+        meta["excluded_fast_prop"] = True
+        return None, meta
+
+    # 2) recolectar por bloque con penalización de error, dentro de [min,max]
+    b3, b4, b6, b7 = [], [], [], []
+    for t in trials:
+        rt = t["rt"]
+        if rt < min_rt_s or rt > max_rt_s:
+            continue
+        if not t["correct"]:
+            rt += error_penalty_s
+        if t["block"] == compat_blocks[0]:
+            b3.append(rt)
+        elif t["block"] == compat_blocks[1]:
+            b4.append(rt)
+        elif t["block"] == incompat_blocks[0]:
+            b6.append(rt)
+        elif t["block"] == incompat_blocks[1]:
+            b7.append(rt)
+
+    meta["n3"], meta["n4"], meta["n6"], meta["n7"] = len(b3), len(b4), len(b6), len(b7)
+
+    # 3) D por pares disponibles
+    dvals = []
+
+    if len(b3) >= 2 and len(b6) >= 2:
+        sd36 = stdev(b3 + b6)
+        meta["sd36"] = sd36
+        if sd36 > 0:
+            meta["d36"] = (mean(b6) - mean(b3)) / sd36
+            dvals.append(meta["d36"])
+
+    if len(b4) >= 2 and len(b7) >= 2:
+        sd47 = stdev(b4 + b7)
+        meta["sd47"] = sd47
+        if sd47 > 0:
+            meta["d47"] = (mean(b7) - mean(b4)) / sd47
+            dvals.append(meta["d47"])
+
+    if not dvals:
+        return None, meta
+
+    d = float(round(sum(dvals) / len(dvals), 4))
+    # sd_pooled informativa (no estrictamente necesaria)
+    pooled = b3 + b4 + b6 + b7
+    meta["sd_pooled"] = stdev(pooled) if len(pooled) >= 2 else 0.0
+    return d, meta
+# ========= Fin Minno IAT (2 categorías) =========
+
+
 # === ST-IAT: parseo y D-score (MinnoJS) ======================================
 import csv, io
 from typing import Dict, Any, List, Tuple, Optional
@@ -636,6 +787,24 @@ def get_num_iterations_for_round(rnd):
 
 class Player(BasePlayer):
 
+    # IAT adicional A (palabras)
+    iat_minno2a_csv    = models.LongStringField(blank=True)
+    iat_minno2a_d      = models.FloatField(blank=True)
+    iat_minno2a_reason = models.LongStringField(blank=True)
+
+    # IAT adicional B (palabras)
+    iat_minno2b_csv    = models.LongStringField(blank=True)
+    iat_minno2b_d      = models.FloatField(blank=True)
+    iat_minno2b_reason = models.LongStringField(blank=True)
+
+
+    # este es el espacio dedicado a las variables del iat de dos categorías. 
+    # CSV crudo del IAT Minno (ya lo tenías en 1), lo dejo por claridad: 
+    iat_minno2_csv = models.LongStringField(blank=True)
+
+    # NUEVOS: resultado y motivo/exclusión
+    iat_minno2_d      = models.FloatField(blank=True)
+    iat_minno2_reason = models.LongStringField(blank=True)
 
     #variables para el iat:
     iat_minno2_csv = models.LongStringField(blank=True)
@@ -1551,13 +1720,33 @@ class MinnoIAT2Cats(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        # muéstralo donde te convenga; por defecto, ronda 1
         return player.round_number == 1
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # marca que se terminó; úsalo si quieres
-        player.participant.vars['minno_iat2cats_done'] = bool(player.iat_minno2_csv)
+        trials = parse_minno_iat_csv(player.iat_minno2_csv or "")
+        d, meta = compute_minno_iat_d(trials)
+        player.iat_minno2_d = d
+        player.iat_minno2_reason = _minno_iat_reason_from_meta(d, meta)
+
+        # (opcional) guardar meta para debugging / export
+        pv = player.participant.vars
+        pv['minno_iat2_meta'] = meta
+
+class MinnoIAT2Result(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        d = player.iat_minno2_d  # Float o None
+        d_display = f"{d:.3f}" if d is not None else "(N/A)"
+        reason_display = player.iat_minno2_reason or ""
+        return dict(
+            d_display=d_display,
+            reason_display=reason_display,
+        )
 
 
 #iats con dos categorías de minno:
@@ -2646,6 +2835,7 @@ page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
     MinnoIAT2Cats,
+    MinnoIAT2Result,
     StiatSexuality,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,

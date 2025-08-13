@@ -1,0 +1,11 @@
+{% extends "otree/Page.html" %}
+
+{% block title %}Resultado IAT{% endblock %}
+
+{% block content %}
+  <p><strong>D-score:</strong> {{ d_display }}</p>
+  {% if reason_display %}
+    <p><em>{{ reason_display }}</em></p>
+  {% endif %}
+  {{ next_button }}
+{% endblock %}
