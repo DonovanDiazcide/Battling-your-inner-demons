@@ -24,9 +24,9 @@ SESSION_CONFIGS = [
         
 
         # st-iats de minno
-        use_minno_stiat=False,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
-        use_minno_stiat_sex = False,
-        use_minno_stiat_dis = False,  # ⬅️ Activa/desactiva la página de Minno (ST-IAT) para disforia de género.
+        use_minno_stiat=True,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
+        use_minno_stiat_sex = True,
+        use_minno_stiat_dis = True,  # ⬅️ Activa/desactiva la página de Minno (ST-IAT) para disforia de género.
 
 
 

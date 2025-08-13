@@ -1885,7 +1885,7 @@ class StiatSexuality(Page):
     @staticmethod
     def is_displayed(player: Player):
         m = player.participant.vars.get('iat_task_rounds', {})
-        return m.get('MinnoIAT2CatsB') == player.round_number
+        return m.get('StiatSexuality') == player.round_number
     
     @staticmethod
     def before_next_page(player: 'Player', timeout_happened):
@@ -2906,8 +2906,6 @@ class ResultsDictator2(Page):
 
 
 page_sequence = [
-    #InstruccionesGenerales1,
-    #InstruccionesGenerales2,
     # IATs (todas; se mostrarán sólo las asignadas en cada ronda)
     MinnoIAT2Cats,
     MinnoIAT2CatsA,
@@ -2915,25 +2913,7 @@ page_sequence = [
     StiatSexuality,
     StiatDisability,
     StiatMinno,
-    Comprehension,
-    ComprehensionFeedback,
-    Comprehension2,
-    ComprehensionFeedback2,
-    UserInfo,
-    #PreguntaM,
-    Intro,
-    RoundN,  # Rondas 1-14: iat.
-    IATAssessmentPage,  # Ronda 15: Evaluación del iat
-    MoralDecisionPageCerteza,
-    MoralDecisionPageCerteza2,
-    # Ronda 15: Decisión
-    # Results,                   # Por ahora, no queremos mostrar los resultados del iat. En caso de querer hacer esto e
-    # en caso de querer hacerlo, falta manejar los assement de acuerdo con la aleatorización del iat.
-    DictatorIntroduction,  # Rondas 16-18: Introducción al Dictador
-    DictatorOffer,
-    DictatorOffer2, # Rondas 16-18: Oferta del Dictador,    # Rondas 16-18: Espera de Resultados del Dictador
-    ResultsDictador,  # Rondas 16-18: Resultados del Dictador,            # Ronda 18: Resultados Finales del Dictador
-    #ResultsDictator2,
+    
 ]
 
 
