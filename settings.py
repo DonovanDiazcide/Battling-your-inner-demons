@@ -5,14 +5,19 @@ SESSION_CONFIGS = [
         display_name="iat using images",
         num_demo_participants=4,
         app_sequence=["iat"],
-        primary_images=True,
-        primary=['images:Personas obesas', 'images:Personas delgadas', 'images:Personas homosexuales', "images:Personas heterosexuales"],
-        secondary_images=True,
-        secondary=['images:Bueno', 'images:Malo', 'images:Bueno', 'images:Malo', 'images:bueno peso', 'images:malo peso', 'images:bueno sexualidad', 'images:malo sexualidad' ],
-        num_iterations={1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
-                        8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
-                        15: 1, 16: 1,
-                        },
+        # Opción A: exactamente 3 ST-IAT
+        iat_n_st=3, iat_n_2cat=0,
+
+        # Opción B: exactamente 3 de 2 categorías
+        # iat_n_st=0, iat_n_2cat=3,
+
+        # Opción C: 1 ST y 2 de 2 categorías
+        # iat_n_st=1, iat_n_2cat=2,
+
+        # Opción D: total=3, y que el tipo (ST/2CAT) se decida aleatoriamente por jugador
+        # iat_total=3, iat_randomize_types=True,
+
+        # Si no pones nada, por defecto tomamos iat_total=Constants.num_rounds
 
         #iats de minno:
         use_minno_iat = True,

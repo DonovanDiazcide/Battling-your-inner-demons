@@ -12,6 +12,22 @@ import math
 from statistics import mean, stdev
 from decimal import Decimal
 
+
+# === Catálogo de IATs disponibles (usa tus clases reales) =====================
+# kind: 'st' = single-target; '2cat' = dos categorías
+# === Catálogo de IATs por clave, sin referenciar clases ===
+IAT_LIBRARY = {
+    'MinnoIAT2Cats':   {'kind': '2cat'},
+    'MinnoIAT2CatsA':  {'kind': '2cat'},
+    'MinnoIAT2CatsB':  {'kind': '2cat'},
+    'IatMinno':        {'kind': '2cat'},
+    'StiatSexuality':  {'kind': 'st'},
+    'StiatDisability': {'kind': 'st'},
+    'StiatMinno':      {'kind': 'st'},
+}
+
+
+
 # comentarios.
 doc = """
 Implicit Association Test, draft
@@ -474,8 +490,8 @@ class Constants(BaseConstants):
     # cambios realmente sucedieron en class payoff y en class dictatorOffer.  
 
     players_per_group = None
-    num_rounds = 16  # 14 para iat + 4 para dictador
-
+    num_rounds = 3  # <-- exactamente 6 rondas
+    
     # variables que necesito globalmente para el iat: 
     keys = {"e": 'left', "i": 'right'}
     trial_delay = 0.250
@@ -689,50 +705,71 @@ class Subsession(BaseSubsession):
     secondary_right = models.StringField()
 
 
-#función que se ejecuta al crear la sesión
-def creating_session(self):
-    session = self.session
-    defaults = dict(
-        retry_delay=0.5,
-        trial_delay=0.5,
-        primary=[None, None],
-        primary_images=False,
-        secondary=[None, None],
-        secondary_images=False,
-        num_iterations={
-            1: 5, 2: 5, 3: 10, 4: 20, 5: 5, 6: 10, 7: 20,
-            8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
-            15: 1, 16: 1
-        },
-    )
-    session.params = {}
-    for param in defaults:
-        session.params[param] = session.config.get(param, defaults[param])
+def _select_iats_for_participant(cfg) -> list[str]:
+    """Devuelve lista de claves de IAT seleccionadas para un participante."""
+    import random
 
-    if self.round_number == 1:
-        # --- CAMBIO AQUÍ: TODOS CON ORDEN DIRECTO 1..14 ---
-        orden_directo = list(range(1, 15))
-        for p in self.get_players():
-            p.participant.vars['iat_round_order'] = orden_directo
+    # 1) Leer intención de la sesión
+    n_st   = cfg.get('iat_n_st')
+    n_2cat = cfg.get('iat_n_2cat')
+    total  = cfg.get('iat_total', None)
+    rnd_types = cfg.get('iat_randomize_types', False)
 
-        # Mantén categorías del Dictador como estaban (sin aleatorización)
-        shuffled_categories = Constants.categories.copy()
-        random.shuffle(shuffled_categories)
-        session.vars['shuffled_dictator_categories'] = Constants.categories.copy()
-        
-    block = get_block_for_round(self.round_number, session.params)
-    self.practice = block.get('practice', False)
-    self.primary_left = block.get('left', {}).get('primary', "")
-    self.primary_right = block.get('right', {}).get('primary', "")
-    self.secondary_left = block.get('left', {}).get('secondary', "")
-    self.secondary_right = block.get('right', {}).get('secondary', "")
+    # Si no especificaste nada, por defecto: total = Constants.num_rounds
+    if (n_st is None and n_2cat is None and total is None):
+        total = Constants.num_rounds
 
-    if self.round_number in [15, 16]:
-        shuffled_categories = session.vars.get('shuffled_dictator_categories')
-        if shuffled_categories:
-            assigned_category = shuffled_categories[self.round_number - 15]
-            for group in self.get_groups():
-                group.dictator_category = assigned_category
+    # 2) Pools por tipo
+    st_pool   = [k for k,v in IAT_LIBRARY.items() if v['kind'] == 'st']
+    cat2_pool = [k for k,v in IAT_LIBRARY.items() if v['kind'] == '2cat']
+
+    # 3) Selección
+    selected = []
+    if (n_st is not None) or (n_2cat is not None):
+        # Selección exacta por tipo (con límite por disponibilidad)
+        if n_st:
+            if n_st > len(st_pool):
+                print(f"[WARN] Solicitados {n_st} ST, pero sólo hay {len(st_pool)}; se tomarán todos.")
+            selected += random.sample(st_pool, min(n_st, len(st_pool)))
+        if n_2cat:
+            if n_2cat > len(cat2_pool):
+                print(f"[WARN] Solicitados {n_2cat} 2CAT, pero sólo hay {len(cat2_pool)}; se tomarán todos.")
+            selected += random.sample(cat2_pool, min(n_2cat, len(cat2_pool)))
+        # Si pediste más de los que hay, la lista será más corta.
+    else:
+        # total con tipo aleatorio por jugador
+        total = int(total or Constants.num_rounds)
+        # Clona pools para no agotar globales
+        pools = {'st': st_pool.copy(), '2cat': cat2_pool.copy()}
+        for _ in range(total):
+            tipos_disponibles = [t for t,p in pools.items() if p]
+            if not tipos_disponibles:
+                break
+            tipo = random.choice(tipos_disponibles) if rnd_types else (
+                'st' if (len(pools['st']) >= len(pools['2cat'])) else '2cat'
+            )
+            key = random.choice(pools[tipo])
+            selected.append(key)
+            pools[tipo].remove(key)
+
+    # 4) Aleatorizar orden
+    random.shuffle(selected)
+    # 5) Recorta/enlonga para coincidir con num_rounds
+    if len(selected) > Constants.num_rounds:
+        selected = selected[:Constants.num_rounds]
+    return selected
+
+def creating_session(subsession: Subsession):
+    if subsession.round_number == 1:
+        cfg = subsession.session.config
+        for p in subsession.get_players():
+            order = _select_iats_for_participant(cfg)
+            rounds_map = {key: idx+1 for idx, key in enumerate(order)}
+            p.participant.vars['iat_task_order']  = order
+            p.participant.vars['iat_task_rounds'] = rounds_map
+            # DEBUG: imprime orden por jugador
+            print(f"[DEBUG] P{p.id_in_subsession} IAT order → {order}")
+            print(f"[DEBUG] P{p.id_in_subsession} task→round → {rounds_map}")
 
 
 #funcion para obtener el bloque de la ronda
@@ -1720,7 +1757,8 @@ class MinnoIAT2Cats(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1
+        m = player.participant.vars.get('iat_task_rounds', {})
+        return m.get('MinnoIAT2Cats') == player.round_number
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -1751,26 +1789,6 @@ class MinnoIAT2Result(Page):
 
 #iats con dos categorías de minno:
 
-class IatMinno(Page):
-    form_model  = 'player'
-    form_fields = ['iat_raw']
-
-    @staticmethod
-    def is_displayed(player: Player):
-        # muéstralo en la ronda 1 cuando lo actives en la sesión
-        return player.round_number == 1 and player.session.config.get('use_minno_iat', False)
-
-    @staticmethod
-    def before_next_page(player: Player, timeout_happened):
-        # 1) parsear CSV de Minno
-        trials = parse_minno_stiat_csv(player.iat_raw or "")
-
-        # 2) por ahora solo guardamos meta básica; el D clásico lo conectamos luego
-        pv = player.participant.vars
-        pv['minno_iat_done'] = True
-        pv['iat_n_trials'] = len(trials)
-
-
 # En tu clase StiatMinno, sustituye el before_next_page por éste:
 
 class StiatMinno(Page):
@@ -1779,8 +1797,8 @@ class StiatMinno(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        # muéstralo en la ronda 1 cuando lo actives en la sesión
-        return player.round_number == 1 and player.session.config.get('use_minno_stiat', False)
+        m = player.participant.vars.get('iat_task_rounds', {})
+        return m.get('StiatMinno') == player.round_number
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -1810,7 +1828,9 @@ class MinnoIAT2CatsA(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1   # usa la ronda que quieras
+        m = player.participant.vars.get('iat_task_rounds', {})
+        return m.get('MinnoIAT2CatsA') == player.round_number
+
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -1828,7 +1848,8 @@ class MinnoIAT2CatsB(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1   # usa la ronda que quieras
+        m = player.participant.vars.get('iat_task_rounds', {})
+        return m.get('MinnoIAT2CatsB') == player.round_number
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -1863,9 +1884,9 @@ class StiatSexuality(Page):
 
     @staticmethod
     def is_displayed(player: Player):
-        # muéstralo en la ronda 1 cuando lo actives en la sesión
-        return player.round_number == 1 and player.session.config.get('use_minno_stiat_sex', False)
-
+        m = player.participant.vars.get('iat_task_rounds', {})
+        return m.get('MinnoIAT2CatsB') == player.round_number
+    
     @staticmethod
     def before_next_page(player: 'Player', timeout_happened):
         trials = parse_minno_stiat_csv(player.stiat_sex_raw or "")
@@ -1886,8 +1907,9 @@ class StiatDisability(Page):
     form_fields = ['stiat_dis_raw']
 
     @staticmethod
-    def is_displayed(player: 'Player'):
-        return player.round_number == 1  # <- ronda 1
+    def is_displayed(player: Player):
+        m = player.participant.vars.get('iat_task_rounds', {})
+        return m.get('StiatDisability') == player.round_number
 
     @staticmethod
     def before_next_page(player: 'Player', timeout_happened):
@@ -2886,8 +2908,13 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
+    # IATs (todas; se mostrarán sólo las asignadas en cada ronda)
+    MinnoIAT2Cats,
     MinnoIAT2CatsA,
-    MinnoIAT2CatsAResult,   # ⬅️ nueva página opcional con MinnoJS. 
+    MinnoIAT2CatsB,
+    StiatSexuality,
+    StiatDisability,
+    StiatMinno,
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,
