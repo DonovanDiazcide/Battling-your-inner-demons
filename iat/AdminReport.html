@@ -1,0 +1,20 @@
+{% extends "otree/AdminPage.html" %}
+{% block content %}
+<h3>Tratamiento y orden IAT por participante</h3>
+<table class="table">
+  <tr><th>#</th><th>Participant code</th><th>Treatment</th><th>Orden IAT</th><th>task→round</th></tr>
+  {% for r in rows %}
+    <tr>
+      <td>{{ r.pid }}</td>
+      <td>{{ r.code }}</td>
+      <td>{{ r.treatment }}</td>
+      <td>{{ r.order|join:", " }}</td>
+      <td>
+        {% for k,v in r.mapping.items %}
+          {{ k }}→{{ v }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

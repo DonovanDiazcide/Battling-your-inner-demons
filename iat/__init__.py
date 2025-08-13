@@ -12,6 +12,10 @@ import math
 from statistics import mean, stdev
 from decimal import Decimal
 
+# ================== Tratamientos + IAT randomization helpers ==================
+
+# 3 tratamientos idénticos (por ahora)
+TREATMENTS = ['T1', 'T2', 'T3']
 
 # === Catálogo de IATs disponibles (usa tus clases reales) =====================
 # kind: 'st' = single-target; '2cat' = dos categorías
@@ -706,40 +710,27 @@ class Subsession(BaseSubsession):
 
 
 def _select_iats_for_participant(cfg) -> list[str]:
-    """Devuelve lista de claves de IAT seleccionadas para un participante."""
     import random
-
-    # 1) Leer intención de la sesión
+    # lee reglas de settings
     n_st   = cfg.get('iat_n_st')
     n_2cat = cfg.get('iat_n_2cat')
     total  = cfg.get('iat_total', None)
     rnd_types = cfg.get('iat_randomize_types', False)
 
-    # Si no especificaste nada, por defecto: total = Constants.num_rounds
     if (n_st is None and n_2cat is None and total is None):
-        total = Constants.num_rounds
+        total = Constants.num_rounds  # por defecto: tantas rondas como Constants
 
-    # 2) Pools por tipo
     st_pool   = [k for k,v in IAT_LIBRARY.items() if v['kind'] == 'st']
     cat2_pool = [k for k,v in IAT_LIBRARY.items() if v['kind'] == '2cat']
 
-    # 3) Selección
     selected = []
     if (n_st is not None) or (n_2cat is not None):
-        # Selección exacta por tipo (con límite por disponibilidad)
         if n_st:
-            if n_st > len(st_pool):
-                print(f"[WARN] Solicitados {n_st} ST, pero sólo hay {len(st_pool)}; se tomarán todos.")
             selected += random.sample(st_pool, min(n_st, len(st_pool)))
         if n_2cat:
-            if n_2cat > len(cat2_pool):
-                print(f"[WARN] Solicitados {n_2cat} 2CAT, pero sólo hay {len(cat2_pool)}; se tomarán todos.")
             selected += random.sample(cat2_pool, min(n_2cat, len(cat2_pool)))
-        # Si pediste más de los que hay, la lista será más corta.
     else:
-        # total con tipo aleatorio por jugador
         total = int(total or Constants.num_rounds)
-        # Clona pools para no agotar globales
         pools = {'st': st_pool.copy(), '2cat': cat2_pool.copy()}
         for _ in range(total):
             tipos_disponibles = [t for t,p in pools.items() if p]
@@ -752,25 +743,64 @@ def _select_iats_for_participant(cfg) -> list[str]:
             selected.append(key)
             pools[tipo].remove(key)
 
-    # 4) Aleatorizar orden
     random.shuffle(selected)
-    # 5) Recorta/enlonga para coincidir con num_rounds
     if len(selected) > Constants.num_rounds:
         selected = selected[:Constants.num_rounds]
     return selected
 
+def _show_in_round(player: 'Player', key: str) -> bool:
+    mapping = player.participant.vars.get('iat_task_rounds', {})
+    return mapping.get(key) == player.round_number
+
+# ================== FIN helpers ==================
+
 def creating_session(subsession: Subsession):
     if subsession.round_number == 1:
         cfg = subsession.session.config
+
+        # ¿forzar tratamiento desde settings?, ¿balancear?, ¿o random?
+        forced_treatment   = cfg.get('treatment')         # e.g. 'T1'|'T2'|'T3'
+        balanced_treatments = cfg.get('balanced_treatments', False)
+
+        # si se pide balanceo por sesión
+        cycler = None
+        if forced_treatment not in TREATMENTS and balanced_treatments:
+            import itertools
+            cycler = itertools.cycle(TREATMENTS)
+
         for p in subsession.get_players():
+            # 1) asignar tratamiento
+            if forced_treatment in TREATMENTS:
+                tr = forced_treatment
+            elif cycler:
+                tr = next(cycler)
+            else:
+                import random
+                tr = random.choice(TREATMENTS)
+
+            p.participant.vars['treatment'] = tr
+
+            # 2) seleccionar y ordenar IATs para este participante
             order = _select_iats_for_participant(cfg)
             rounds_map = {key: idx+1 for idx, key in enumerate(order)}
             p.participant.vars['iat_task_order']  = order
             p.participant.vars['iat_task_rounds'] = rounds_map
-            # DEBUG: imprime orden por jugador
-            print(f"[DEBUG] P{p.id_in_subsession} IAT order → {order}")
-            print(f"[DEBUG] P{p.id_in_subsession} task→round → {rounds_map}")
 
+            # 3) DEBUG a consola
+            print(f"[DEBUG] P{p.id_in_subsession} code={p.participant.code} "
+                  f"treatment={tr} order={order} task→round={rounds_map}")
+
+def vars_for_admin_report(subsession: Subsession):
+    rows = []
+    for p in subsession.get_players():
+        rows.append(dict(
+            pid=p.id_in_subsession,
+            code=p.participant.code,
+            treatment=p.participant.vars.get('treatment'),
+            order=p.participant.vars.get('iat_task_order', []),
+            mapping=p.participant.vars.get('iat_task_rounds', {}),
+        ))
+    return dict(rows=rows)
 
 #funcion para obtener el bloque de la ronda
 def get_block_for_round(rnd, params):

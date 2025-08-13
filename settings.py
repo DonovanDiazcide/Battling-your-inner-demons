@@ -3,10 +3,12 @@ SESSION_CONFIGS = [
     dict(
         name="iat_images",
         display_name="iat using images",
-        num_demo_participants=4,
+        num_demo_participants=9,
+        balanced_treatments=True,  # T1, T2, T3 en ciclo
+        iat_total=3, iat_randomize_types=True,
         app_sequence=["iat"],
         # Opción A: exactamente 3 ST-IAT
-        iat_n_st=3, iat_n_2cat=0,
+        iat_n_st=1, iat_n_2cat=2,
 
         # Opción B: exactamente 3 de 2 categorías
         # iat_n_st=0, iat_n_2cat=3,
