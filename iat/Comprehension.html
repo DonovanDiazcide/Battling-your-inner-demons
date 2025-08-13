@@ -16,14 +16,18 @@
 
 {% block content %}
 
-CAMBIAR DESPUÉS, LO USÉ COMO PRUEBA PARA QUE EL DSCORE SE CALCULE CORRECTAMENTE. 
 
-{% if has_stiat %}
-  <p>D-score ST-IAT: <strong>{{ player.stiat_d }}</strong></p>
-{% else %}
-  <p>Contestaste demasiado rápido o tuviste muchos errores.</p>
-{% endif %}
+<p>Resultados de tus pruebas activas (si alguna falló por velocidad/errores se indicará abajo):</p>
 
+{% for iat in iat_scores %}
+  {% if iat.has %}
+    <p>{{ iat.nombre }}: <strong>{{ iat.valor }}</strong></p>
+  {% else %}
+    <p>{{ iat.nombre }}: Contestaste demasiado rápido o tuviste muchos errores.</p>
+  {% endif %}
+{% empty %}
+  <p>No hay pruebas activas configuradas.</p>
+{% endfor %}
 
 <p>Contesta las siguientes preguntas para confirmar que entendiste las reglas.</p>
 <hr>

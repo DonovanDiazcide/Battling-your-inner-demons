@@ -18,6 +18,9 @@ Implicit Association Test, draft
 """
 from statistics import mean, stdev
 
+from typing import Optional, List, Dict, Tuple, Any
+from statistics import mean, stdev
+
 
 # funciones para calcular d-scores.
 
@@ -254,6 +257,62 @@ def classify_stiat_black(d: Optional[float]) -> str:
     level = "Leve" if x <= 0.35 else ("Moderada" if x <= 0.65 else "Fuerte")
     return f"{level}: {'Black+positivo' if d>0 else 'Black+negativo'}"
 
+def classify_stiat_sexuality(d: Optional[float]) -> str:
+    """
+    Umbrales habituales: |D| < .15 = Neutral; .15–.35 = Leve; .35–.65 = Moderada; >.65 = Fuerte.
+    Para ST-IAT de 'Gay people':
+      D > 0 → Gay+Pleasant más rápido (evaluación implícita positiva hacia Gay people)
+      D < 0 → Gay+Unpleasant más rápido (evaluación implícita negativa hacia Gay people)
+    """
+    if d is None:
+        return "Sin clasificación"
+    x = abs(d)
+    if x < 0.15:
+        return "Neutral"
+    level = "Leve" if x <= 0.35 else ("Moderada" if x <= 0.65 else "Fuerte")
+    return f"{level}: {'Gay+positivo' if d > 0 else 'Gay+negativo'}"
+
+
+def classify_stiat_disability(d: Optional[float]) -> str:
+    """
+    Umbrales habituales: |D| < .15 = Neutral; .15–.35 = Leve; .35–.65 = Moderada; >.65 = Fuerte.
+    Para ST-IAT de 'People with disabilities':
+      D > 0 → Disability+Pleasant más rápido (evaluación implícita positiva hacia People with disabilities)
+      D < 0 → Disability+Unpleasant más rápido (evaluación implícita negativa hacia People with disabilities)
+    """
+    if d is None:
+        return "Sin clasificación"
+    x = abs(d)
+    if x < 0.15:
+        return "Neutral"
+    level = "Leve" if x <= 0.35 else ("Moderada" if x <= 0.65 else "Fuerte")
+    return f"{level}: {'Disability+positivo' if d > 0 else 'Disability+negativo'}"
+
+
+# === Fin de tus funciones ===
+
+def _block_map(session):
+    # permite override desde SESSION_CONFIGS; si no, usa (3 compat, 5 incompat)
+    return session.config.get('stiat_block_map', DEFAULT_STIAT_BLOCK_MAP)
+
+def _save_stiat_csv(player: 'Player', raw_csv: str, target: str):
+    rows = parse_minno_stiat_csv(raw_csv)
+    bm = _block_map(player.session)
+    d, meta = compute_stiat_d(rows, bm["compatible"], bm["incompatible"])
+    if target == 'sex':
+        player.stiat_sex_d = d
+        player.stiat_sex_reason = _reason_from_meta(d, meta)
+    elif target == 'dis':
+        player.stiat_dis_d = d
+        player.stiat_dis_reason = _reason_from_meta(d, meta)
+
+def _reason_from_meta(d, meta) -> str:
+    if d is not None: return ''
+    if meta.get("excluded_fast_prop"): return 'Excluido: >10% RT <300ms'
+    if meta.get("sd_pooled") == 0:     return 'Excluido: SD=0'
+    if meta.get("n_compat_used",0) < 2 or meta.get("n_incompat_used",0) < 2:
+        return f'Excluido: pocos ensayos (compat={meta.get("n_compat_used")}, incompat={meta.get("n_incompat_used")})'
+    return 'Excluido: sin datos válidos'
 
 # clase de Constants para definir las variables globales del experimento. 
 
@@ -577,13 +636,19 @@ def get_num_iterations_for_round(rnd):
 
 class Player(BasePlayer):
 
-    #integración de variables para single target IAT, black
-     # ...
-    stiat_raw = models.LongStringField(blank=True)   # CSV emitido por MinnoJS
-    stiat_d   = models.FloatField(blank=True)        # opcional: D-score del ST-IAT
+    #variables para el iat de minno: 
+    iat_raw = models.LongStringField(blank=True)
 
 
-     # NUEVOS: Sexuality
+
+    # variables para el st-iat de minno:
+
+    # NUEVOS: black
+    stiat_raw     = models.LongStringField(blank=True)
+    stiat_d       = models.FloatField(blank=True)
+    stiat_reason  = models.LongStringField(blank=True)
+
+    # NUEVOS: Sexuality
     stiat_sex_raw     = models.LongStringField(blank=True)
     stiat_sex_d       = models.FloatField(blank=True)
     stiat_sex_reason  = models.LongStringField(blank=True)
@@ -1480,6 +1545,29 @@ class RoundN(Page):
 
 #nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
 
+
+#iats con dos categorías de minno:
+
+class IatMinno(Page):
+    form_model  = 'player'
+    form_fields = ['iat_raw']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # muéstralo en la ronda 1 cuando lo actives en la sesión
+        return player.round_number == 1 and player.session.config.get('use_minno_iat', False)
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # 1) parsear CSV de Minno
+        trials = parse_minno_stiat_csv(player.iat_raw or "")
+
+        # 2) por ahora solo guardamos meta básica; el D clásico lo conectamos luego
+        pv = player.participant.vars
+        pv['minno_iat_done'] = True
+        pv['iat_n_trials'] = len(trials)
+
+
 # En tu clase StiatMinno, sustituye el before_next_page por éste:
 
 class StiatMinno(Page):
@@ -1511,6 +1599,54 @@ class StiatMinno(Page):
         pv['stiat_block_map'] = dict(compatible=compat, incompatible=incompat)
         pv['minno_stiat_done'] = True
         pv['stiat_class'] = classify_stiat_black(d)
+
+
+
+class StiatSexuality(Page):
+    form_model  = 'player'
+    form_fields = ['stiat_sex_raw']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # muéstralo en la ronda 1 cuando lo actives en la sesión
+        return player.round_number == 1 and player.session.config.get('use_minno_stiat_sex', False)
+
+    @staticmethod
+    def before_next_page(player: 'Player', timeout_happened):
+        trials = parse_minno_stiat_csv(player.stiat_sex_raw or "")
+        bm = player.session.config.get('stiat_block_map', DEFAULT_STIAT_BLOCK_MAP)
+        compat = bm.get("compatible", [3]); incompat = bm.get("incompatible", [5])
+        d, meta = compute_stiat_d(trials, compat, incompat)
+        player.stiat_sex_d = d
+        player.stiat_sex_reason = _reason_from_meta(d, meta)
+        pv = player.participant.vars
+        pv['stiat_sex_meta'] = meta
+        pv['stiat_sex_block_map'] = dict(compatible=compat, incompatible=incompat)
+        pv['minno_stiat_sex_done'] = True
+        pv['stiat_sex_class'] = classify_stiat_sexuality(d)
+
+
+class StiatDisability(Page):
+    form_model  = 'player'
+    form_fields = ['stiat_dis_raw']
+
+    @staticmethod
+    def is_displayed(player: 'Player'):
+        return player.round_number == 1  # <- ronda 1
+
+    @staticmethod
+    def before_next_page(player: 'Player', timeout_happened):
+        trials = parse_minno_stiat_csv(player.stiat_dis_raw or "")
+        bm = player.session.config.get('stiat_block_map', DEFAULT_STIAT_BLOCK_MAP)
+        compat = bm.get("compatible", [3]); incompat = bm.get("incompatible", [5])
+        d, meta = compute_stiat_d(trials, compat, incompat)
+        player.stiat_dis_d = d
+        player.stiat_dis_reason = _reason_from_meta(d, meta)
+        pv = player.participant.vars
+        pv['stiat_dis_meta'] = meta
+        pv['stiat_dis_block_map'] = dict(compatible=compat, incompatible=incompat)
+        pv['minno_stiat_dis_done'] = True
+        pv['stiat_dis_class'] = classify_stiat_disability(d)
 
 
 class UserInfo(Page):
@@ -1563,15 +1699,16 @@ class PreguntaM(Page):
 
 from collections import OrderedDict
 
+from otree.api import *
+from otree import settings
+import random
+from collections import OrderedDict  # ya lo usas en before_next_page
+
 class Comprehension(Page):
     form_model = 'player'
     form_fields = [
-        'comp_q1',
-        'comp_q2',
-        'stage_order',   # <-- aquí lo incluimos
-        'comp_q4',
-        'comp_q5',
-        'comp_q6',
+        'comp_q1', 'comp_q2', 'stage_order',
+        'comp_q4', 'comp_q5', 'comp_q6',
     ]
 
     @staticmethod
@@ -1581,26 +1718,20 @@ class Comprehension(Page):
             given = getattr(player, f)
             correct = Constants.CORRECT_ANSWERS[f]
 
-            # ---------- determinar si acertó ----------
             if f == 'stage_order':
                 given_list = [s.strip() for s in (given or '').splitlines() if s.strip()]
                 correct_list = [s.strip() for s in correct.splitlines()]
                 ok = (given_list == correct_list)
-            else:
-                ok = (given == correct)
-
-            # ---------- label legible que el usuario marcó ----------
-            if f == 'stage_order':
                 given_label = " → ".join(given_list) if given else "(vacío)"
             else:
-                # convierte QUESTION_OPTIONS en dict {valor: texto}
+                ok = (given == correct)
                 opts_dict = OrderedDict(Constants.QUESTION_OPTIONS[f])
                 given_label = opts_dict.get(given, "(sin marcar)")
 
             res[f] = dict(
                 text=Constants.QUESTION_TEXT[f],
-                given=given,  # letra o texto crudo
-                given_label=given_label,  # texto legible
+                given=given,
+                given_label=given_label,
                 correct=correct,
                 ok=ok,
                 options=Constants.QUESTION_OPTIONS.get(f, []),
@@ -1610,7 +1741,6 @@ class Comprehension(Page):
 
         player.participant.vars.update(comp_results=res, comp_score=score)
         player.participant.vars['compr1_shown'] = True
-
 
     @staticmethod
     def is_displayed(player):
@@ -1631,15 +1761,41 @@ class Comprehension(Page):
         ]
         random.shuffle(etapas)
 
-        stiat_val = player.field_maybe_none('stiat_d')  # <- seguro si es None
-       
+        # Construimos una lista de IATs activos con un flag booleano 'has'
+        iat_scores = []
+
+        if getattr(settings, 'use_minno_stiat', True):
+            val = player.field_maybe_none('stiat_d')
+            iat_scores.append({
+                'nombre': 'ST-IAT (personas negras)',
+                'valor': val,
+                'has': (val is not None),
+                'razon': player.field_maybe_none('stiat_reason') or '',
+            })
+
+        if getattr(settings, 'use_minno_stiat_sex', True):
+            val = player.field_maybe_none('stiat_sex_d')
+            iat_scores.append({
+                'nombre': 'ST-IAT (sexualidad)',
+                'valor': val,
+                'has': (val is not None),
+                'razon': player.field_maybe_none('stiat_sex_reason') or '',
+            })
+
+        if getattr(settings, 'use_minno_stiat_dis', True):
+            val = player.field_maybe_none('stiat_dis_d')
+            iat_scores.append({
+                'nombre': 'ST-IAT (discapacidad)',
+                'valor': val,
+                'has': (val is not None),
+                'razon': player.field_maybe_none('stiat_dis_reason') or '',
+            })
 
         return dict(
             etapas_aleatorias=etapas,
-            stiat_d=stiat_val,
-            has_stiat=(stiat_val is not None),
-            stiat_reason=player.participant.vars.get('stiat_d_reason', ''),
+            iat_scores=iat_scores,
         )
+
     
 class ComprehensionFeedback(Page):
     @staticmethod
@@ -2475,7 +2631,7 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
-    StiatMinno,   # ⬅️ nueva página opcional con MinnoJS. 
+    StiatSexuality,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,

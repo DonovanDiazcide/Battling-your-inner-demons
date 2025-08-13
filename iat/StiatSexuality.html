@@ -1,0 +1,51 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block title %}ST-IAT (MinnoJS){% endblock %}
+
+{% block content %}
+  <div id="stiat-root"></div>
+  <input type="hidden" name="stiat_sex_raw" id="stiat_sex_raw">
+  <div id="stiat-status" class="alert alert-info mt-3">Cargando el ST-IAT…</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- MinnoJS (mismo CDN del post) -->
+  <script src="https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js"></script>
+  <script>
+    (function () {
+      // evita re-arranque si el usuario vuelve/recarga
+      if (window.__minnoStarted) return; window.__minnoStarted = true;
+
+      const root   = document.getElementById('stiat-root');
+      const hidden = document.getElementById('stiat_sex_raw');
+      const status = document.getElementById('stiat-status');
+
+      function start() {
+        // usa tu script hospedado
+        const taskUrl = "{% static 'iat/stiat/sexuality.js' %}";
+
+        // Arranca Minno
+        minnoJS(root, taskUrl);
+
+        // Captura el output (CSV-like) en el hidden field para oTree
+        minnoJS.logger = function (value) {
+          hidden.value = value;
+        };
+
+        // Avanza automáticamente cuando termina
+        minnoJS.onEnd = function () {
+          // Pequeño delay para que oTree registre el valor
+          setTimeout(function () {
+            document.querySelector('form').submit();
+          }, 100);
+        };
+
+        if (status) status.remove();
+      }
+
+      if (window.minnoJS) start();
+      else window.addEventListener('load', start);
+    })();
+  </script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block title %}IAT (MinnoJS){% endblock %}
+
+{% block content %}
+  <div id="iat-root"></div>
+  <input type="hidden" name="iat_raw" id="iat_raw">
+  <div id="iat-status" class="alert alert-info mt-3">Cargando el IAT…</div>
+{% endblock %}
+
+{% block scripts %}
+  <!-- MinnoJS (mismo CDN del post) -->
+  <script src="https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js"></script>
+  <script>
+    (function () {
+      const root   = document.getElementById('iat-root');
+      const hidden = document.getElementById('iat_raw');
+      const status = document.getElementById('iat-status');
+
+      function start() {
+        // Usa tu script hospedado (cambios mínimos respecto al ejemplo)
+        const taskUrl = "{% static 'iat/iat_two_cats.js' %}";
+
+        // Arranca Minno
+        minnoJS(root, taskUrl);
+
+        // Captura el output (CSV-like) en el hidden field para oTree
+        minnoJS.logger = function (value) {
+          hidden.value = value;
+        };
+
+        // Avanza automáticamente cuando termina
+        minnoJS.onEnd = function () {
+          // Pequeño delay para que oTree registre el valor
+          setTimeout(function () {
+            document.querySelector('form').submit();
+          }, 100);
+        };
+
+        if (status) status.remove();
+      }
+
+      if (window.minnoJS) start();
+      else window.addEventListener('load', start);
+    })();
+  </script>
+{% endblock %}

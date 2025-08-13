@@ -13,7 +13,18 @@ SESSION_CONFIGS = [
                         8: 5, 9: 5, 10: 10, 11: 20, 12: 5, 13: 10, 14: 20,
                         15: 1, 16: 1,
                         },
-        use_minno_stiat=True,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
+
+        #iats de minno:
+        use_minno_iat = True,
+        
+
+        # st-iats de minno
+        use_minno_stiat=False,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
+        use_minno_stiat_sex = True,
+        use_minno_stiat_dis = False,  # ⬅️ Activa/desactiva la página de Minno (ST-IAT) para disforia de género.
+
+
+
         # opcional, pero yo lo pongo explícito: (comenario mío, creo que esta es un línea de código para indicarle al programa de donde jalar el iat, creo que entonces para dejar 
         #el iat dinámico voy a tener que tener 6 links en total, espero sea eso, primero quiero ver que su enfoque para calcular el d-score sea correcto.)
         stiat_task_url = "https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/stiat/qualtrics/exampleSTIAT.js",
