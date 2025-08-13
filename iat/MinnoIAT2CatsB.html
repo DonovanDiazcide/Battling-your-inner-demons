@@ -1,0 +1,39 @@
+{% extends "otree/Page.html" %}
+{% load otree static %}
+
+{% block title %}Prueba de Asociación Implícita – B{% endblock %}
+
+{% block content %}
+  <style>
+    .hidden-field { display:none; }
+    #minno-root { min-height: 480px; }
+  </style>
+
+  <div class="hidden-field">
+    {{ formfield 'iat_minno2b_csv' }}
+  </div>
+
+  <div id="minno-root"></div>
+
+  <script>
+  (function () {
+    var root = document.getElementById('minno-root');
+    var payload = document.querySelector('[name="iat_minno2b_csv"]');
+    var form = document.querySelector('form');
+
+    function loadScript(src, onload){
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = onload;
+      s.onreadystatechange = onload;
+      document.body.appendChild(s);
+    }
+
+    loadScript('https://cdn.jsdelivr.net/gh/minnojs/minno-quest@0.3/dist/pi-minno.js', function () {
+      minnoJS(root, '/static/iat/minno/words_iat_B.js');
+      minnoJS.logger = function (value) { payload.value = value || ''; };
+      minnoJS.onEnd = function () { setTimeout(function(){ form.submit(); }, 120); };
+    });
+  })();
+  </script>
+{% endblock %}

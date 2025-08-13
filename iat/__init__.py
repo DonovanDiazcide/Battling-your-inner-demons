@@ -1803,6 +1803,58 @@ class StiatMinno(Page):
         pv['minno_stiat_done'] = True
         pv['stiat_class'] = classify_stiat_black(d)
 
+# === IAT adicional A (igual estructura) ===
+class MinnoIAT2CatsA(Page):
+    form_model  = 'player'
+    form_fields = ['iat_minno2a_csv']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1   # usa la ronda que quieras
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        trials = parse_minno_iat_csv(player.iat_minno2a_csv or "")
+        d, meta = compute_minno_iat_d(trials)
+        player.iat_minno2a_d = d
+        player.iat_minno2a_reason = '' if d is not None else _minno_iat_reason_from_meta(d, meta)
+        player.participant.vars['minno_iat2a_meta'] = meta
+
+
+# === IAT adicional B (igual estructura) ===
+class MinnoIAT2CatsB(Page):
+    form_model  = 'player'
+    form_fields = ['iat_minno2b_csv']
+
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1   # usa la ronda que quieras
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        trials = parse_minno_iat_csv(player.iat_minno2b_csv or "")
+        d, meta = compute_minno_iat_d(trials)
+        player.iat_minno2b_d = d
+        player.iat_minno2b_reason = '' if d is not None else _minno_iat_reason_from_meta(d, meta)
+        player.participant.vars['minno_iat2b_meta'] = meta
+
+class MinnoIAT2CatsAResult(Page):
+    @staticmethod
+    def is_displayed(player): return player.round_number == 1
+    @staticmethod
+    def vars_for_template(player):
+        d = player.iat_minno2a_d
+        return dict(d_display=f"{d:.3f}" if d is not None else "(N/A)",
+                    reason_display=player.iat_minno2a_reason or "")
+
+class MinnoIAT2CatsBResult(Page):
+    @staticmethod
+    def is_displayed(player): return player.round_number == 1
+    @staticmethod
+    def vars_for_template(player):
+        d = player.iat_minno2b_d
+        return dict(d_display=f"{d:.3f}" if d is not None else "(N/A)",
+                    reason_display=player.iat_minno2b_reason or "")
 
 
 class StiatSexuality(Page):
@@ -2834,9 +2886,8 @@ class ResultsDictator2(Page):
 page_sequence = [
     #InstruccionesGenerales1,
     #InstruccionesGenerales2,
-    MinnoIAT2Cats,
-    MinnoIAT2Result,
-    StiatSexuality,   # ⬅️ nueva página opcional con MinnoJS. 
+    MinnoIAT2CatsA,
+    MinnoIAT2CatsAResult,   # ⬅️ nueva página opcional con MinnoJS. 
     Comprehension,
     ComprehensionFeedback,
     Comprehension2,
