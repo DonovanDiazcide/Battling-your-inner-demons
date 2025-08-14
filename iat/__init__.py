@@ -5,9 +5,6 @@ import logging
 # from .admin_report_functions import *
 from otree.api import *
 from otree import settings
-from . import stimuli
-from . import stats
-from . import blocks
 import math
 from statistics import mean, stdev
 from decimal import Decimal
