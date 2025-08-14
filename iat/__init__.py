@@ -2497,5 +2497,3 @@ page_sequence = [
     #ResultsDictator2,
 ]
 
-
-
