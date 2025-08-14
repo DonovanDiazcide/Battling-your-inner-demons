@@ -19,18 +19,15 @@ TREATMENTS = ['T1', 'T2', 'T3']
 
 # === Catálogo de IATs disponibles (usa tus clases reales) =====================
 # kind: 'st' = single-target; '2cat' = dos categorías
-# === Catálogo de IATs por clave, sin referenciar clases ===
+# === Catálogo de IATs por clave, sin referenciar clases. ===
 IAT_LIBRARY = {
     'MinnoIAT2Cats':   {'kind': '2cat'},
     'MinnoIAT2CatsA':  {'kind': '2cat'},
     'MinnoIAT2CatsB':  {'kind': '2cat'},
-    'IatMinno':        {'kind': '2cat'},
     'StiatSexuality':  {'kind': 'st'},
     'StiatDisability': {'kind': 'st'},
     'StiatMinno':      {'kind': 'st'},
 }
-
-
 
 # comentarios.
 doc = """
