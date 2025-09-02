@@ -399,9 +399,8 @@ def _reason_from_meta(d, meta) -> str:
 class Constants(BaseConstants):
     name_in_url = 'iat'
     players_per_group = None
-    num_rounds = 3  # <-- exactamente 6 rondas
-    
-    endowment = Decimal('100')  # Añadido para un posible juego del dictador
+    num_rounds = 5  # ← ahora son 5 rondas (1-3 IATs, 4 prefs, 5 decisiones)
+    endowment = Decimal('100')
 
 
     ### variables para el cuestionario de comprensión
@@ -517,6 +516,9 @@ class Subsession(BaseSubsession):
     secondary_right = models.StringField()
 
 
+# === NUEVO: cantidad fija de rondas de IAT ===
+IAT_ROUNDS = 3  # rondas 1..3 son IATs; 4=preferencias; 5=decisiones
+
 def _select_iats_for_participant(cfg) -> list[str]:
     import random
     # lee reglas de settings
@@ -525,8 +527,9 @@ def _select_iats_for_participant(cfg) -> list[str]:
     total  = cfg.get('iat_total', None)
     rnd_types = cfg.get('iat_randomize_types', False)
 
+    # Fallback: 3 IATs, no 5
     if (n_st is None and n_2cat is None and total is None):
-        total = Constants.num_rounds  # por defecto: tantas rondas como Constants
+        total = IAT_ROUNDS
 
     st_pool   = [k for k,v in IAT_LIBRARY.items() if v['kind'] == 'st']
     cat2_pool = [k for k,v in IAT_LIBRARY.items() if v['kind'] == '2cat']
@@ -538,7 +541,7 @@ def _select_iats_for_participant(cfg) -> list[str]:
         if n_2cat:
             selected += random.sample(cat2_pool, min(n_2cat, len(cat2_pool)))
     else:
-        total = int(total or Constants.num_rounds)
+        total = int(total or IAT_ROUNDS)
         pools = {'st': st_pool.copy(), '2cat': cat2_pool.copy()}
         for _ in range(total):
             tipos_disponibles = [t for t,p in pools.items() if p]
@@ -552,13 +555,10 @@ def _select_iats_for_participant(cfg) -> list[str]:
             pools[tipo].remove(key)
 
     random.shuffle(selected)
-    if len(selected) > Constants.num_rounds:
-        selected = selected[:Constants.num_rounds]
+    if len(selected) > IAT_ROUNDS:
+        selected = selected[:IAT_ROUNDS]
     return selected
 
-def _show_in_round(player: 'Player', key: str) -> bool:
-    mapping = player.participant.vars.get('iat_task_rounds', {})
-    return mapping.get(key) == player.round_number
 
 # ================== FIN helpers ==================
 
@@ -611,12 +611,31 @@ def vars_for_admin_report(subsession: Subsession):
     return dict(rows=rows)
 
 class Player(BasePlayer):
+    # --- RONDA 4: tres preguntas (booleanas) en orden aleatorizado por tratamiento ---
+    r4_q1 = models.BooleanField(
+        choices=[(True, 'Sí'), (False, 'No')],
+        widget=widgets.RadioSelect,
+        label='(Se definirá dinámicamente en la plantilla)'
+    )
+    r4_q2 = models.BooleanField(
+        choices=[(True, 'Sí'), (False, 'No')],
+        widget=widgets.RadioSelect,
+        label='(Se definirá dinámicamente en la plantilla)'
+    )
+    r4_q3 = models.BooleanField(
+        choices=[(True, 'Sí'), (False, 'No')],
+        widget=widgets.RadioSelect,
+        label='(Se definirá dinámicamente en la plantilla)'
+    )
+
+    # --- RONDA 5: campo de captura (un solo input reutilizable) ---
+    r5_offer = models.IntegerField(min=0, max=100, blank=True)
 
     # este es el espacio dedicado a las variables del iat de dos categorías. 
     # CSV crudo del IAT Minno (ya lo tenías en 1), lo dejo por claridad: 
     iat_minno2_csv = models.LongStringField(blank=True)
 
-    # NUEVOS: resultado y motivo/exclusión
+    # IAT black-white: resultado y motivo/exclusión
     iat_minno2_d      = models.FloatField(blank=True)
     iat_minno2_reason = models.LongStringField(blank=True)
 
@@ -788,6 +807,131 @@ def custom_export(players):
                 pv.get(f'payoff_r{rnd}'),
                 # ... (más campos IAT si los deseas) ...
             ]
+#funciones decisiones monetarias: 
+
+# ===== Helpers de mapeo IAT→tipo y d-score, y orden por tratamiento =====
+
+# Mapea clave de IAT → nombre del campo d-score en Player
+IAT_DFIELD = {
+    'MinnoIAT2Cats':  'iat_minno2_d',
+    'MinnoIAT2CatsA': 'iat_minno2a_d',
+    'MinnoIAT2CatsB': 'iat_minno2b_d',
+    'StiatMinno':     'stiat_d',
+    'StiatSexuality': 'stiat_sex_d',
+    'StiatDisability':'stiat_dis_d',
+}
+
+def get_treatment(player: 'Player') -> str:
+    return player.participant.vars.get('treatment', 'T1')
+
+def iat_key_for_round(player: 'Player', rnd_idx: int) -> str:
+    """rnd_idx ∈ {1,2,3} → clave de IAT jugado en esa ronda (según aleatorización previa)."""
+    order = player.participant.vars.get('iat_task_order', [])
+    if 1 <= rnd_idx <= len(order):
+        return order[rnd_idx-1]
+    return ''
+
+def key_kind(key: str) -> str:
+    """'st' | '2cat' según IAT_LIBRARY."""
+    info = IAT_LIBRARY.get(key, {})
+    return info.get('kind', 'st')
+
+def dscore_for_key(player: 'Player', key: str):
+    field = IAT_DFIELD.get(key)
+    return getattr(player, field, None) if field else None
+
+def d_in_range(d, lo=-0.5, hi=0.5) -> bool:
+    return (d is not None) and (lo <= d <= hi)
+
+# ---- Orden de preguntas (Ronda 4) decidido a nivel tratamiento (fijo y reproducible) ----
+# Cada lista indica en qué orden se referencian los IAT de las rondas 1,2,3.
+# Ej.: ['3','1','2'] => Pregunta 1 habla del IAT jugado en la ronda 3, pregunta 2 del de la 1, etc.
+TREATMENT_R4_ORDER = {
+    'T1': [3, 1, 2],  # (similar a tu ejemplo)
+    'T2': [1, 3, 2],
+    'T3': [2, 1, 3],
+}
+
+def build_round4_question_plan(player: 'Player'):
+    """Devuelve lista de 3 dicts con metadata por pregunta (orden a nivel tratamiento)."""
+    tr = get_treatment(player)
+    perm = TREATMENT_R4_ORDER.get(tr, [1,2,3])
+    plan = []
+    for i, rnd_idx in enumerate(perm, start=1):
+        key = iat_key_for_round(player, rnd_idx)
+        kind = key_kind(key)
+        d = dscore_for_key(player, key)
+        plan.append(dict(
+            qslot=i, rnd_idx=rnd_idx, key=key, kind=kind, d=d,
+            d_in_band=d_in_range(d)
+        ))
+    # Guarda el plan y un map qslot→rnd en participant.vars para trazabilidad
+    player.participant.vars['r4_plan'] = plan
+    player.participant.vars['r4_qmap'] = {p['qslot']: p['rnd_idx'] for p in plan}
+    return plan
+
+# ---- Construcción de las 9 decisiones de la Ronda 5 (3 por IAT), orden a nivel tratamiento ----
+
+# Para cada IAT generamos 3 "páginas" (p1,p2,p3) con modos de revelación:
+#   ST:
+#     p1: self vs target; revelación depende de R4 (80/20).
+#     p2: self vs target; revelación SIEMPRE (independiente de R4).
+#     p3: self vs target; revelación NUNCA  (independiente de R4).
+#   2cat:
+#     p1: cat1 vs cat2; revelación depende de R4 (80/20) sobre ambas categorías.
+#     p2: cat1 vs cat2; revelación SIEMPRE.
+#     p3: cat1 vs cat2; revelación NUNCA.
+#
+# Esto asegura "3 páginas por IAT" también cuando el IAT es ST (simetría y claridad).
+
+def _seed_for_r5(session_code: str, treatment: str) -> int:
+    # Un seed reproducible por sesión y tratamiento
+    return abs(hash(f'R5-{session_code}-{treatment}')) % (2**31)
+
+def _r5_label_categories(key: str, kind: str):
+    # Etiquetas genéricas (si tienes nombres reales de categorías por IAT, cámbialas aquí)
+    if kind == 'st':
+        return ('Tú', f'Categoría del IAT ({key})')
+    else:
+        return ('Categoría 1', 'Categoría 2')
+
+def init_round5_decisions(player: 'Player'):
+    """
+    Construye y guarda en participant.vars['r5_decision_queue'] una lista de 9 decisiones:
+    cada item: dict con {pos, rnd_idx, key, kind, page_type, reveal_mode}
+    - page_type: 'p1','p2','p3'
+    - reveal_mode: 'depends_r4' | 'always' | 'never'
+    Orden aleatorio a nivel tratamiento (mismo para participantes del mismo tratamiento).
+    """
+    if player.participant.vars.get('r5_decision_queue'):
+        return  # ya inicializado
+
+    # 3 IATs según rondas 1..3
+    items = []
+    for rnd_idx in [1,2,3]:
+        key = iat_key_for_round(player, rnd_idx)
+        kind = key_kind(key)
+        # Tres páginas por IAT:
+        items.append(dict(rnd_idx=rnd_idx, key=key, kind=kind, page_type='p1', reveal_mode='depends_r4'))
+        items.append(dict(rnd_idx=rnd_idx, key=key, kind=kind, page_type='p2', reveal_mode='always'))
+        items.append(dict(rnd_idx=rnd_idx, key=key, kind=kind, page_type='p3', reveal_mode='never'))
+
+    # Barajar con semilla por tratamiento
+    tr = get_treatment(player)
+    seed = _seed_for_r5(player.session.code, tr)
+    rng = random.Random(seed)
+    rng.shuffle(items)
+
+    # Numerar posiciones 1..9 y guardar
+    for i, it in enumerate(items, start=1):
+        it['pos'] = i
+        # Precalcula etiquetas de las "partes"
+        it['left_label'], it['right_label'] = _r5_label_categories(it['key'], it['kind'])
+
+    player.participant.vars['r5_decision_queue'] = items
+    player.participant.vars['r5_log'] = []      # log secuencial de las 9 decisiones
+    player.participant.vars['r5_agg'] = {}      # agregados por IAT/page_type/categoría
+
 
 #nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
 
@@ -1098,6 +1242,205 @@ class ComprehensionFeedback(Page):
         # Aquí marcamos que ya mostramos feedback, para que is_displayed pase a False
         player.participant.vars['feedback1_shown'] = True
 
+#páginas decisiones monetarias:
+class Round4Reveal(Page):
+    form_model = 'player'
+    form_fields = ['r4_q1', 'r4_q2', 'r4_q3']
+
+    @staticmethod
+    def is_displayed(player: 'Player'):
+        return player.round_number == 4
+
+    @staticmethod
+    def vars_for_template(player: 'Player'):
+        plan = player.participant.vars.get('r4_plan') or build_round4_question_plan(player)
+        # Construye textos de pregunta (puedes usarlos en la plantilla)
+        questions = []
+        for p in plan:
+            dtxt = f"{p['d']:.3f}" if p['d'] is not None else "(N/A)"
+            if p['kind'] == 'st':
+                text = (
+                    f"Tu IAT de la ronda {p['rnd_idx']} (una categoría) tiene D={dtxt}. "
+                    f"Si D ∈ [-0.5,0.5]: ¿Quieres que, cuando repartas dinero con una persona de esa categoría, "
+                    f"con 80% de probabilidad te revelemos la categoría y 20% no?"
+                )
+            else:
+                text = (
+                    f"Tu IAT de la ronda {p['rnd_idx']} (dos categorías) tiene D={dtxt}. "
+                    f"Si D ∈ [-0.5,0.5]: ¿Quieres que, cuando repartas dinero entre personas de ambas categorías, "
+                    f"con 80% de probabilidad te revelemos la identidad de ambas categorías y 20% no?"
+                )
+            questions.append(dict(qslot=p['qslot'], text=text, d=p['d'], kind=p['kind'], rnd_idx=p['rnd_idx']))
+        return dict(questions=questions)
+
+    @staticmethod
+    def before_next_page(player: 'Player', timeout_happened):
+        plan = player.participant.vars.get('r4_plan') or build_round4_question_plan(player)
+        answers = {
+            1: player.r4_q1,
+            2: player.r4_q2,
+            3: player.r4_q3,
+        }
+        # Guardar por ronda original (rnd_idx) para usar en R5
+        prefs = {}
+        for p in plan:
+            rnd = p['rnd_idx']
+            ans = answers[p['qslot']]
+            # Sólo cuenta si D ∈ [-0.5,0.5]; si no, lo marcamos None
+            prefs[rnd] = ans if d_in_range(p['d']) else None
+        player.participant.vars['r4_prefs_by_rnd'] = prefs
+
+class _MonetaryDecisionBase(Page):
+    form_model  = 'player'
+    form_fields = ['r5_offer']
+    timeout_seconds = 5  # ← 5 segundos para decidir
+
+    # Debe ser sobreescrita por subclases 1..9
+    DECISION_POS = 1
+
+    @staticmethod
+    def is_displayed(player: 'Player'):
+        return player.round_number == 5
+
+    @staticmethod
+    def _current_item(player: 'Player', pos: int) -> dict:
+        init_round5_decisions(player)
+        queue = player.participant.vars['r5_decision_queue']
+        return next(x for x in queue if x['pos'] == pos)
+
+    @staticmethod
+    def vars_for_template(player: 'Player'):
+        pos = player.__class__.DECISION_POS
+        item = _MonetaryDecisionBase._current_item(player, pos)
+
+        # Determinar si habrá revelación de categorías en ESTA página
+        reveal = False
+        if item['reveal_mode'] == 'always':
+            reveal = True
+        elif item['reveal_mode'] == 'never':
+            reveal = False
+        else:
+            # depends_r4 → usa preferencia de R4 SÓLO si D ∈ [-0.5,0.5]; si no, tratamos como "no pref" (20% reveal)
+            prefs = player.participant.vars.get('r4_prefs_by_rnd', {})
+            pref = prefs.get(item['rnd_idx'], None)
+            d = dscore_for_key(player, item['key'])
+            base_prob = 0.8 if (pref is True and d_in_range(d)) else 0.2
+            # Usa un RNG reproducible por participante+pos para que no cambie en refresh
+            seed = abs(hash(f"{player.participant.code}-{player.round_number}-pos{pos}")) % (2**31)
+            rng = random.Random(seed)
+            reveal = (rng.random() < base_prob)
+
+        # Texto para la interfaz
+        L, R = item['left_label'], item['right_label']
+        if item['kind'] == 'st':
+            if reveal:
+                context = f"Estás repartiendo entre {L} y {R}."
+            else:
+                context = "Estás repartiendo entre Tú y una persona del grupo A."
+        else:
+            if reveal:
+                context = f"Estás repartiendo entre {L} y {R}."
+            else:
+                context = "Estás repartiendo entre la Categoría A y la Categoría B."
+
+        return dict(
+            pos=pos,
+            endowment=int(Constants.endowment),
+            context=context,
+            left_label=L if reveal else ('Tú' if item['kind']=='st' else 'Categoría A'),
+            right_label=R if reveal else ('Grupo A' if item['kind']=='st' else 'Categoría B'),
+            page_type=item['page_type'],
+            reveal=reveal,
+            iat_key=item['key'],
+            iat_kind=item['kind'],
+            rnd_idx=item['rnd_idx'],
+        )
+
+    @staticmethod
+    def before_next_page(player: 'Player', timeout_happened):
+        pos = player.__class__.DECISION_POS
+        item = _MonetaryDecisionBase._current_item(player, pos)
+
+        offer = player.r5_offer
+        if timeout_happened or offer is None:
+            offer = 50  # default 50/50
+        # Limitar a [0,100]
+        offer = max(0, min(100, int(offer)))
+
+        # Determinar revelación otra vez de la misma forma usada en template (idéntica lógica)
+        reveal = False
+        if item['reveal_mode'] == 'always':
+            reveal = True
+        elif item['reveal_mode'] == 'never':
+            reveal = False
+        else:
+            prefs = player.participant.vars.get('r4_prefs_by_rnd', {})
+            pref = prefs.get(item['rnd_idx'], None)
+            d = dscore_for_key(player, item['key'])
+            base_prob = 0.8 if (pref is True and d_in_range(d)) else 0.2
+            seed = abs(hash(f"{player.participant.code}-{player.round_number}-pos{pos}")) % (2**31)
+            rng = random.Random(seed)
+            reveal = (rng.random() < base_prob)
+
+        # Construir los montos (siempre 100 total)
+        left_amt = offer
+        right_amt = 100 - offer
+
+        # Registrar en log secuencial
+        log = player.participant.vars.get('r5_log', [])
+        entry = dict(
+            pos=pos,
+            rnd_idx=item['rnd_idx'],
+            key=item['key'],
+            kind=item['kind'],
+            page_type=item['page_type'],
+            reveal_mode=item['reveal_mode'],
+            reveal=reveal,
+            offer_left=left_amt,
+            offer_right=right_amt,
+            timestamp=time.time(),
+        )
+        log.append(entry)
+        player.participant.vars['r5_log'] = log
+
+        # Registrar agregados por IAT / page_type / categoría
+        agg = player.participant.vars.get('r5_agg', {})
+        k = (item['key'], item['page_type'])
+
+        if item['kind'] == 'st':
+            # Guardar por separado: self vs categoría
+            # Nota: cuando no hay revelación, "left" sigue siendo "Tú"
+            self_amt = left_amt
+            cat_amt  = right_amt
+            a = agg.get(k, dict(self_total=0, cat_total=0, count=0))
+            a['self_total'] += self_amt
+            a['cat_total']  += cat_amt
+            a['count'] += 1
+            agg[k] = a
+        else:
+            # 2 categorías: cat1 (left) y cat2 (right), independientemente de revelación
+            a = agg.get(k, dict(cat1_total=0, cat2_total=0, count=0))
+            a['cat1_total'] += left_amt
+            a['cat2_total'] += right_amt
+            a['count'] += 1
+            agg[k] = a
+
+        player.participant.vars['r5_agg'] = agg
+
+        # Limpia el campo input para la siguiente página
+        player.r5_offer = None
+
+class MonetaryDecision1(_MonetaryDecisionBase):  DECISION_POS = 1
+class MonetaryDecision2(_MonetaryDecisionBase):  DECISION_POS = 2
+class MonetaryDecision3(_MonetaryDecisionBase):  DECISION_POS = 3
+class MonetaryDecision4(_MonetaryDecisionBase):  DECISION_POS = 4
+class MonetaryDecision5(_MonetaryDecisionBase):  DECISION_POS = 5
+class MonetaryDecision6(_MonetaryDecisionBase):  DECISION_POS = 6
+class MonetaryDecision7(_MonetaryDecisionBase):  DECISION_POS = 7
+class MonetaryDecision8(_MonetaryDecisionBase):  DECISION_POS = 8
+class MonetaryDecision9(_MonetaryDecisionBase):  DECISION_POS = 9
+
+
 page_sequence = [
     # IATs (todas; se mostrarán sólo las asignadas en cada ronda)
     MinnoIAT2Cats,
@@ -1106,4 +1449,16 @@ page_sequence = [
     StiatSexuality,
     StiatDisability,
     StiatMinno,
+
+    # --- NUEVAS RONDAS ---
+    Round4Reveal,            # ronda 4
+    MonetaryDecision1,       # las 9 decisiones de la ronda 5
+    MonetaryDecision2,
+    MonetaryDecision3,
+    MonetaryDecision4,
+    MonetaryDecision5,
+    MonetaryDecision6,
+    MonetaryDecision7,
+    MonetaryDecision8,
+    MonetaryDecision9,
 ]

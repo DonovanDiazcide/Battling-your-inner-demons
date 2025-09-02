@@ -1,0 +1,53 @@
+{% extends "global/Page.html" %}
+
+{% block title %}
+Decisión monetaria ({{ pos }} / 9)
+{% endblock %}
+
+{% block content %}
+
+<p style="margin-bottom:0.75rem;">
+  {{ context }}
+</p>
+
+<div style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-bottom:12px;">
+  <div style="margin-bottom:8px;">
+    <strong>Dotación total de esta decisión: {{ endowment }}</strong>
+  </div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:center;">
+    <div style="text-align:center;">
+      <div style="font-weight:600; margin-bottom:4px;">{{ left_label }}</div>
+      <div style="font-size:12px; opacity:0.8;">(lado izquierdo)</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="font-weight:600; margin-bottom:4px;">{{ right_label }}</div>
+      <div style="font-size:12px; opacity:0.8;">(lado derecho)</div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-bottom:0.5rem;">
+  Escribe cuánto asignas al <strong>lado izquierdo</strong> (0–100). El resto se asignará automáticamente al
+  <strong>lado derecho</strong>. Si no respondes en 5 segundos, se asignará por defecto <code>50 / 50</code>.
+</p>
+
+{{ formfield 'r5_offer' label='' }}
+
+{{ next_button }}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Enfoca y fuerza teclado numérico en móviles
+  const inp = document.getElementById('id_r5_offer');
+  if (inp) {
+    inp.setAttribute('inputmode', 'numeric');
+    inp.setAttribute('autocomplete', 'off');
+    inp.setAttribute('min', '0');
+    inp.setAttribute('max', '100');
+    if (!inp.value) { setTimeout(()=> inp.focus(), 0); }
+  }
+</script>
+{% endblock %}

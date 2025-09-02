@@ -1,0 +1,35 @@
+{% extends "global/Page.html" %}
+
+{% block title %}
+Preferencias de revelación (Ronda 4)
+{% endblock %}
+
+{% block content %}
+<p>
+  A continuación verás <strong>3 preguntas</strong>, cada una correspondiente a uno de los IAT que completaste
+  en las rondas 1–3. El orden es aleatorio a nivel de tratamiento.
+</p>
+<p>
+  La pregunta sólo aplica si el puntaje D del IAT cae en el rango <code>[-0.5, 0.5]</code>; en caso contrario,
+  registraremos tu preferencia como “no aplicable” para esa ronda.
+</p>
+
+<ol class="otree-list">
+  {% for q in questions %}
+    <li style="margin-bottom:1rem;">
+      <div style="margin-bottom:0.5rem;">{{ q.text }}</div>
+
+      {# Pintamos el campo correspondiente al qslot, sin etiqueta adicional #}
+      {% if q.qslot == 1 %}
+        {{ formfield 'r4_q1' label='' }}
+      {% elif q.qslot == 2 %}
+        {{ formfield 'r4_q2' label='' }}
+      {% elif q.qslot == 3 %}
+        {{ formfield 'r4_q3' label='' }}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ol>
+
+{{ next_button }}
+{% endblock %}
