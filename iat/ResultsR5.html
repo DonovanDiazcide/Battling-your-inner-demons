@@ -1,0 +1,65 @@
+{% extends "global/Page.html" %}
+
+{% block title %}
+Resumen de tus decisiones (Ronda 5)
+{% endblock %}
+
+{% block content %}
+
+<p>
+  Abajo verás tus asignaciones <strong>en el orden exacto</strong> en que aparecieron.
+  La dotación por decisión fue de <strong>{{ total_dotacion }}</strong> unidades.
+</p>
+
+<p style="font-size: 0.9em; opacity: 0.85;">
+  <em>Nota:</em> <strong>Censurar (R4)</strong> indica tu preferencia de la ronda 4 para ese IAT:
+  <strong>Sí</strong> = preferiste <u>no revelar</u> identidad; <strong>No</strong> = preferiste <u>revelar</u>;
+  <strong>N/A</strong> = tu D-score estaba fuera de [-0.5, 0.5] y no aplicaba.
+</p>
+
+{% if iats|length == 0 %}
+  <p>No se registraron decisiones. Si estás en modo prueba, verifica que se ejecutaran las 9 páginas.</p>
+{% else %}
+
+  {% for i in iats %}
+    <h4 style="margin-top:1rem;">{{ i.titulo }}</h4>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th># orden</th>
+          <th>Página</th>
+          <th>Modo</th>
+          <th>Revelado</th>
+          <th>Censurar (R4)</th>
+          <th><u>Por default</u></th> <!-- ← NUEVA COLUMNA -->
+          <th>Lado izquierdo</th>
+          <th>Asignado izq.</th>
+          <th>Lado derecho</th>
+          <th>Asignado der.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in i.filas %}
+          <tr>
+            <td>{{ r.pos }}</td>
+            <td>{{ r.page }}</td>
+            <td>{{ r.modo }}</td>
+            <td>{{ r.revelado }}</td>
+            <td>{{ r.censurar }}</td>
+            <td>{{ r.por_default }}</td> <!-- ← NUEVA CELDA -->
+            <td>{{ r.left_label }}</td>
+            <td>{{ r.left_amt }}</td>
+            <td>{{ r.right_label }}</td>
+            <td>{{ r.right_amt }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+
+{% endif %}
+
+{{ next_button }}
+
+{% endblock %}

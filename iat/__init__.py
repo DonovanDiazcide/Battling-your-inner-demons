@@ -594,7 +594,17 @@ def creating_session(subsession: Subsession):
             p.participant.vars['iat_task_order']  = order
             p.participant.vars['iat_task_rounds'] = rounds_map
 
-            # 3) DEBUG a consola
+            # 3) DEBUG: asignar D por default si se pidió
+            if _debug_use_fake_d(subsession.session):
+                # usa participant.vars (persisten entre rondas)
+                dmap = {}
+                for key in order:
+                    dmap[key] = _debug_fake_d_for_key(subsession.session, key)
+                # opcional: resto del catálogo
+                for key in IAT_LIBRARY.keys():
+                    dmap.setdefault(key, _debug_fake_d_for_key(subsession.session, key))
+                p.participant.vars['debug_fake_d'] = dmap
+
             print(f"[DEBUG] P{p.id_in_subsession} code={p.participant.code} "
                   f"treatment={tr} order={order} task→round={rounds_map}")
 
@@ -935,6 +945,63 @@ def init_round5_decisions(player: 'Player'):
 
 #nueva página para el stiat de minno: la herramienta de minno es la herramienta que hay que implementar para ambos iat. 
 
+#probando:iat falso: 
+
+# ======= DEBUG helpers: saltar IAT y D fake =======
+
+def _debug_skip_iats(session) -> bool:
+    return bool(session.config.get('debug_skip_iats', False))
+
+def _debug_use_fake_d(session) -> bool:
+    return bool(session.config.get('debug_fake_dscores', False))
+
+def _debug_fake_d_for_key(session, key: str) -> float:
+    cfg = session.config
+    if 'debug_fake_d_value' in cfg:
+        return float(cfg['debug_fake_d_value'])
+    lo, hi = cfg.get('debug_fake_d_range', (-0.4, 0.4))
+    seed = abs(hash(f"{session.code}-{key}")) % (2**31)
+    rng = random.Random(seed)
+    return round(rng.uniform(lo, hi), 3)
+
+def ensure_fake_dscores_for_selected_iats(player: 'Player'):
+    """Construye y guarda en participant.vars['debug_fake_d'] D-scores
+    para los 3 IAT seleccionados (y opcionalmente para todo el catálogo)."""
+    if not _debug_use_fake_d(player.session):
+        return
+    dmap = player.participant.vars.get('debug_fake_d', {})
+    order = player.participant.vars.get('iat_task_order', [])
+    for key in order:
+        if key and key not in dmap:
+            dmap[key] = _debug_fake_d_for_key(player.session, key)
+    # (Opcional) si quieres que TODO el catálogo tenga valor:
+    for key in IAT_LIBRARY.keys():
+        dmap.setdefault(key, _debug_fake_d_for_key(player.session, key))
+    player.participant.vars['debug_fake_d'] = dmap
+
+# === Reemplaza tu dscore_for_key por este fallback (usa Player.field; si no, fake) ===
+def dscore_for_key(player: 'Player', key: str):
+    """Devuelve el D-score del IAT 'key'.
+    - Primero intenta leer el campo del Player de forma segura (field_maybe_none).
+    - Si es None, busca en participant.vars['debug_fake_d'].
+    """
+    field = IAT_DFIELD.get(key)
+    if not field:
+        return None
+
+    # Acceso seguro para evitar TypeError de oTree cuando el campo es None
+    try:
+        val = player.field_maybe_none(field)
+    except Exception:
+        # fallback ultra-conservador si el método no existiera (o en tests)
+        val = getattr(player, field, None)
+
+    if val is None:
+        dmap = player.participant.vars.get('debug_fake_d', {})
+        val = dmap.get(key, None)
+    return val
+
+
 # --- NUEVA PÁGINA: ejecuta Minno y recibe el CSV
 class MinnoIAT2Cats(Page):
     form_model = 'player'
@@ -942,6 +1009,8 @@ class MinnoIAT2Cats(Page):
 
     @staticmethod
     def is_displayed(player: Player):
+        if _debug_skip_iats(player.session):
+            return False
         m = player.participant.vars.get('iat_task_rounds', {})
         return m.get('MinnoIAT2Cats') == player.round_number
 
@@ -982,6 +1051,8 @@ class StiatMinno(Page):
 
     @staticmethod
     def is_displayed(player: Player):
+        if _debug_skip_iats(player.session):
+            return False
         m = player.participant.vars.get('iat_task_rounds', {})
         return m.get('StiatMinno') == player.round_number
 
@@ -1013,6 +1084,8 @@ class MinnoIAT2CatsA(Page):
 
     @staticmethod
     def is_displayed(player: Player):
+        if _debug_skip_iats(player.session):
+            return False
         m = player.participant.vars.get('iat_task_rounds', {})
         return m.get('MinnoIAT2CatsA') == player.round_number
 
@@ -1033,6 +1106,8 @@ class MinnoIAT2CatsB(Page):
 
     @staticmethod
     def is_displayed(player: Player):
+        if _debug_skip_iats(player.session):
+            return False
         m = player.participant.vars.get('iat_task_rounds', {})
         return m.get('MinnoIAT2CatsB') == player.round_number
 
@@ -1069,6 +1144,8 @@ class StiatSexuality(Page):
 
     @staticmethod
     def is_displayed(player: Player):
+        if _debug_skip_iats(player.session):
+            return False
         m = player.participant.vars.get('iat_task_rounds', {})
         return m.get('StiatSexuality') == player.round_number
     
@@ -1093,6 +1170,8 @@ class StiatDisability(Page):
 
     @staticmethod
     def is_displayed(player: Player):
+        if _debug_skip_iats(player.session):
+            return False
         m = player.participant.vars.get('iat_task_rounds', {})
         return m.get('StiatDisability') == player.round_number
 
@@ -1253,6 +1332,7 @@ class Round4Reveal(Page):
 
     @staticmethod
     def vars_for_template(player: 'Player'):
+        ensure_fake_dscores_for_selected_iats(player)
         plan = player.participant.vars.get('r4_plan') or build_round4_question_plan(player)
         # Construye textos de pregunta (puedes usarlos en la plantilla)
         questions = []
@@ -1293,10 +1373,7 @@ class Round4Reveal(Page):
 class _MonetaryDecisionBase(Page):
     form_model  = 'player'
     form_fields = ['r5_offer']
-    timeout_seconds = 5  # ← 5 segundos para decidir
-
-    # Debe ser sobreescrita por subclases 1..9
-    DECISION_POS = 1
+    timeout_seconds = 5  # 5 segundos para decidir
 
     @staticmethod
     def is_displayed(player: 'Player'):
@@ -1308,9 +1385,10 @@ class _MonetaryDecisionBase(Page):
         queue = player.participant.vars['r5_decision_queue']
         return next(x for x in queue if x['pos'] == pos)
 
+    # ===== Helper para vars_for_template(pos) =====
     @staticmethod
-    def vars_for_template(player: 'Player'):
-        pos = player.__class__.DECISION_POS
+    def _vars_for_template(player: 'Player', pos: int):
+        ensure_fake_dscores_for_selected_iats(player)
         item = _MonetaryDecisionBase._current_item(player, pos)
 
         # Determinar si habrá revelación de categorías en ESTA página
@@ -1325,7 +1403,7 @@ class _MonetaryDecisionBase(Page):
             pref = prefs.get(item['rnd_idx'], None)
             d = dscore_for_key(player, item['key'])
             base_prob = 0.8 if (pref is True and d_in_range(d)) else 0.2
-            # Usa un RNG reproducible por participante+pos para que no cambie en refresh
+            # RNG reproducible por participante+pos para que no cambie en refresh
             seed = abs(hash(f"{player.participant.code}-{player.round_number}-pos{pos}")) % (2**31)
             rng = random.Random(seed)
             reveal = (rng.random() < base_prob)
@@ -1356,18 +1434,32 @@ class _MonetaryDecisionBase(Page):
             rnd_idx=item['rnd_idx'],
         )
 
+    # ===== Helper para before_next_page(pos) =====
     @staticmethod
-    def before_next_page(player: 'Player', timeout_happened):
-        pos = player.__class__.DECISION_POS
+    def _before_next_page(player: 'Player', timeout_happened, pos: int):
         item = _MonetaryDecisionBase._current_item(player, pos)
 
-        offer = player.r5_offer
-        if timeout_happened or offer is None:
-            offer = 50  # default 50/50
-        # Limitar a [0,100]
-        offer = max(0, min(100, int(offer)))
+        # Leer la entrada del usuario de forma segura (puede ser None)
+        raw_offer = player.field_maybe_none('r5_offer')
 
-        # Determinar revelación otra vez de la misma forma usada en template (idéntica lógica)
+        # ¿Fue default?
+        defaulted = False
+        default_reason = None
+        if timeout_happened:
+            defaulted = True
+            default_reason = 'timeout'
+            offer = 50
+        elif raw_offer is None:
+            defaulted = True
+            default_reason = 'blank'
+            offer = 50
+        else:
+            offer = int(raw_offer)
+
+        # Clamp
+        offer = max(0, min(100, offer))
+
+        # Determinar revelación (misma lógica que en _vars_for_template)
         reveal = False
         if item['reveal_mode'] == 'always':
             reveal = True
@@ -1382,11 +1474,11 @@ class _MonetaryDecisionBase(Page):
             rng = random.Random(seed)
             reveal = (rng.random() < base_prob)
 
-        # Construir los montos (siempre 100 total)
+        # Montos (100 total)
         left_amt = offer
         right_amt = 100 - offer
 
-        # Registrar en log secuencial
+        # Log secuencial
         log = player.participant.vars.get('r5_log', [])
         entry = dict(
             pos=pos,
@@ -1398,47 +1490,182 @@ class _MonetaryDecisionBase(Page):
             reveal=reveal,
             offer_left=left_amt,
             offer_right=right_amt,
+            submitted_offer=raw_offer,     # <- NUEVO (para auditar)
+            defaulted=defaulted,           # <- NUEVO
+            default_reason=default_reason, # <- NUEVO
             timestamp=time.time(),
         )
         log.append(entry)
         player.participant.vars['r5_log'] = log
 
-        # Registrar agregados por IAT / page_type / categoría
+        # Agregados por IAT / page_type / categoría (igual que antes)
         agg = player.participant.vars.get('r5_agg', {})
         k = (item['key'], item['page_type'])
-
         if item['kind'] == 'st':
-            # Guardar por separado: self vs categoría
-            # Nota: cuando no hay revelación, "left" sigue siendo "Tú"
-            self_amt = left_amt
-            cat_amt  = right_amt
             a = agg.get(k, dict(self_total=0, cat_total=0, count=0))
-            a['self_total'] += self_amt
-            a['cat_total']  += cat_amt
+            a['self_total'] += left_amt
+            a['cat_total']  += right_amt
             a['count'] += 1
             agg[k] = a
         else:
-            # 2 categorías: cat1 (left) y cat2 (right), independientemente de revelación
             a = agg.get(k, dict(cat1_total=0, cat2_total=0, count=0))
             a['cat1_total'] += left_amt
             a['cat2_total'] += right_amt
             a['count'] += 1
             agg[k] = a
-
         player.participant.vars['r5_agg'] = agg
 
-        # Limpia el campo input para la siguiente página
+        # limpiar input para la siguiente página
         player.r5_offer = None
 
-class MonetaryDecision1(_MonetaryDecisionBase):  DECISION_POS = 1
-class MonetaryDecision2(_MonetaryDecisionBase):  DECISION_POS = 2
-class MonetaryDecision3(_MonetaryDecisionBase):  DECISION_POS = 3
-class MonetaryDecision4(_MonetaryDecisionBase):  DECISION_POS = 4
-class MonetaryDecision5(_MonetaryDecisionBase):  DECISION_POS = 5
-class MonetaryDecision6(_MonetaryDecisionBase):  DECISION_POS = 6
-class MonetaryDecision7(_MonetaryDecisionBase):  DECISION_POS = 7
-class MonetaryDecision8(_MonetaryDecisionBase):  DECISION_POS = 8
-class MonetaryDecision9(_MonetaryDecisionBase):  DECISION_POS = 9
+# ===== Subclases 1..9: llaman a los helpers con su posición =====
+class MonetaryDecision1(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 1)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 1)
+
+class MonetaryDecision2(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 2)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 2)
+
+class MonetaryDecision3(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 3)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 3)
+
+class MonetaryDecision4(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 4)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 4)
+
+class MonetaryDecision5(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 5)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 5)
+
+class MonetaryDecision6(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 6)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 6)
+
+class MonetaryDecision7(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 7)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 7)
+
+class MonetaryDecision8(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 8)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 8)
+
+class MonetaryDecision9(_MonetaryDecisionBase):
+    @staticmethod
+    def vars_for_template(player): return _MonetaryDecisionBase._vars_for_template(player, 9)
+    @staticmethod
+    def before_next_page(player, timeout_happened): return _MonetaryDecisionBase._before_next_page(player, timeout_happened, 9)
+
+# ======= Página de resumen de resultados de la Ronda 5 =======
+
+def _labels_for_entry(entry: dict):
+    """Reconstruye las etiquetas (izq/der) que vio el participante según kind y si hubo revelación."""
+    kind = entry.get('kind')
+    key = entry.get('key')
+    reveal = entry.get('reveal', False)
+    if kind == 'st':
+        # IAT de una categoría
+        if reveal:
+            return ('Tú', f'Categoría del IAT ({key})')
+        else:
+            return ('Tú', 'Grupo A')
+    else:
+        # IAT de dos categorías
+        if reveal:
+            return ('Categoría 1', 'Categoría 2')
+        else:
+            return ('Categoría A', 'Categoría B')
+
+def _label_page_type(pt: str) -> str:
+    return {'p1': 'Página 1', 'p2': 'Página 2', 'p3': 'Página 3'}.get(pt, pt)
+
+def _label_reveal_mode(rm: str) -> str:
+    return {
+        'depends_r4': 'Depende de R4 (80/20)',
+        'always':     'Siempre revelado',
+        'never':      'Nunca revelado',
+    }.get(rm, rm)
+
+class ResultsR5(Page):
+    @staticmethod
+    def is_displayed(player: 'Player'):
+        return player.round_number == 5
+
+    @staticmethod
+    def vars_for_template(player: 'Player'):
+        log = player.participant.vars.get('r5_log', []) or []
+        log = sorted(log, key=lambda x: x.get('pos', 0))
+        prefs = player.participant.vars.get('r4_prefs_by_rnd', {}) or {}
+
+        iat_order, grouped = [], {}
+        for e in log:
+            k = e['key']
+            if k not in grouped:
+                grouped[k] = []
+                iat_order.append(k)
+            grouped[k].append(e)
+
+        iats = []
+        for key in iat_order:
+            entries = grouped[key]
+            kind = entries[0].get('kind')
+            rnd_idx = entries[0].get('rnd_idx')
+
+            pref = prefs.get(rnd_idx, None)
+            base_censor_text = 'No' if pref is True else ('Sí' if pref is False else 'N/A')
+
+            titulo = f"{key} — {'una categoría' if kind=='st' else 'dos categorías'} (ronda {rnd_idx})"
+
+            filas = []
+            for e in entries:
+                left_label, right_label = _labels_for_entry(e)
+                censurar = base_censor_text if e.get('reveal_mode') == 'depends_r4' else '-'
+
+                # NUEVO: texto "Por default"
+                if 'defaulted' in e:
+                    por_default = 'Sí' if e['defaulted'] else 'No'
+                else:
+                    por_default = 'N/D'  # para logs viejos sin este campo
+
+                filas.append(dict(
+                    pos=e['pos'],
+                    page=_label_page_type(e['page_type']),
+                    modo=_label_reveal_mode(e['reveal_mode']),
+                    revelado='Sí' if e['reveal'] else 'No',
+                    censurar=censurar,
+                    por_default=por_default,          # ← NUEVO
+                    left_label=left_label,
+                    left_amt=e['offer_left'],
+                    right_label=right_label,
+                    right_amt=e['offer_right'],
+                ))
+
+            iats.append(dict(
+                key=key, kind=kind, rnd_idx=rnd_idx,
+                titulo=titulo, filas=filas,
+            ))
+
+        total_dotacion = int(Constants.endowment) if hasattr(Constants, 'endowment') else 100
+        return dict(iats=iats, total_dotacion=total_dotacion)    
+
+
 
 
 page_sequence = [
@@ -1461,4 +1688,6 @@ page_sequence = [
     MonetaryDecision7,
     MonetaryDecision8,
     MonetaryDecision9,
+
+    ResultsR5,               # resumen de la ronda 5
 ]

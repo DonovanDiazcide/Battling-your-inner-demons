@@ -10,6 +10,15 @@ SESSION_CONFIGS = [
         # Opción A: exactamente 3 ST-IAT
         iat_n_st=1, iat_n_2cat=2,
 
+        # --- DEBUG ---
+        debug_skip_iats=True,     # NO mostrar páginas de IAT
+        debug_fake_dscores=True,  # Asignar D-scores sintéticos
+        # Opción A: valor fijo para TODOS los IAT
+        debug_fake_d_value=0.20,
+        # Opción B (alternativa): rango aleatorio reproducible por sesión
+        # debug_fake_d_range=(-0.40, 0.40),
+
+        
         # Opción B: exactamente 3 de 2 categorías
         # iat_n_st=0, iat_n_2cat=3,
 
