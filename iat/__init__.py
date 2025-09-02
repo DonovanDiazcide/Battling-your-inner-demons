@@ -976,6 +976,7 @@ from otree import settings
 import random
 from collections import OrderedDict  # ya lo usas en before_next_page
 
+# modificar el is_displayed luego, aún tiene la línea del orden de los iats.
 class Comprehension(Page):
     form_model = 'player'
     form_fields = [
@@ -1106,6 +1107,3 @@ page_sequence = [
     StiatDisability,
     StiatMinno,
 ]
-
-
-

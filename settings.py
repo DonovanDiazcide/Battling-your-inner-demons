@@ -21,23 +21,19 @@ SESSION_CONFIGS = [
 
         # Si no pones nada, por defecto tomamos iat_total=Constants.num_rounds
 
-        #iats de minno:
+        #iats de minno: 
         use_minno_iat = True,
         
-
         # st-iats de minno
         use_minno_stiat=True,   # ⬅️ Activa/desactiva la página de Minno (ST-IAT). 
         use_minno_stiat_sex = True,
         use_minno_stiat_dis = True,  # ⬅️ Activa/desactiva la página de Minno (ST-IAT) para disforia de género.
-
-
 
         # opcional, pero yo lo pongo explícito: (comenario mío, creo que esta es un línea de código para indicarle al programa de donde jalar el iat, creo que entonces para dejar 
         #el iat dinámico voy a tener que tener 6 links en total, espero sea eso, primero quiero ver que su enfoque para calcular el d-score sea correcto.)
         stiat_task_url = "https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/stiat/qualtrics/exampleSTIAT.js",
         # si alguna vez necesitas fallback por bloque:
         # stiat_block_map = {'compatible':[5], 'incompatible':[7]},
-
 
         #quitar esto para cuando se corra en Prolific
         prolific_completion_url="https://app.prolific.com/submissions/complete?cc=XXXXXXX",
